@@ -1,6 +1,3 @@
-
-            
-
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -17,8 +14,9 @@ from .const import DOMAIN
 from .seplos_helper import send_serial_command, extract_data_from_message
 
 # Define your two commands to be sent
-COMMAND_1 = "~200046420000FDAE\r"
-COMMAND_2 = "~200046440000FDAC\r"
+COMMAND_1 = "~20004642E00200FD37\r"
+COMMAND_2 = "~20004644E00200FD35\r"
+
 class SeplosBMSSensorBase(CoordinatorEntity):
     """Base class for Seplos BMS sensors."""
     
@@ -244,14 +242,14 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         if isinstance(self.coordinator.data, tuple):
             telemetry_data, alarms_data = self.coordinator.data
             value = self.get_value(telemetry_data)
-            if value is not None and value is not '':
+            if value is not None and value != '':
                 _LOGGER.debug("Value from telemetry for %s: %s", self._name, value)
                 if base_attribute in self.ALARM_ATTRIBUTES:
                     interpreted_value = self.interpret_alarm(base_attribute, value)
                     return interpreted_value
                 return value
             value = self.get_value(alarms_data)
-            if value is not None and value is not '':
+            if value is not None and value != '':
                 _LOGGER.debug("Value from alarms for %s: %s", self._name, value)
                 if base_attribute in self.ALARM_ATTRIBUTES:
                     interpreted_value = self.interpret_alarm(base_attribute, value)
@@ -260,7 +258,7 @@ class SeplosBMSSensorBase(CoordinatorEntity):
             _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
         else:
             value = self.get_value(self.coordinator.data)
-            if value is not None and value is not '':
+            if value is not None and value != '':
                 _LOGGER.debug("Value from coordinator for %s: %s", self._name, value)
                 if base_attribute in self.ALARM_ATTRIBUTES:
                     interpreted_value = self.interpret_alarm(base_attribute, value)
