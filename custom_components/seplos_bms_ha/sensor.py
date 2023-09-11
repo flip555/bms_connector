@@ -2,7 +2,7 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .seplos_helper import send_serial_command, extract_data_from_message, Telemetry, Alarms, parse_telemetry_info, parse_teledata_info
-
+import asyncio
 import logging
 import time
 
@@ -16,6 +16,8 @@ from .seplos_helper import send_serial_command, extract_data_from_message
 # Define your two commands to be sent
 COMMAND_1 = "~20004642E00200FD37\r"
 COMMAND_2 = "~20004644E00200FD35\r"
+
+
 
 class SeplosBMSSensorBase(CoordinatorEntity):
     """Base class for Seplos BMS sensors."""
@@ -233,39 +235,43 @@ class SeplosBMSSensorBase(CoordinatorEntity):
     def unique_id(self):
         """Return a unique ID for this entity."""
         return f"sep_bms_ha_{self._name}"
-        
+
     @property
     def state(self):
         """Return the state of the sensor."""
+        if not self._attribute:  # Check if attribute is None or empty
+            return super().state
+        
         base_attribute = self._attribute.split('[')[0] if '[' in self._attribute else self._attribute
-
+        
+        value = None
         if isinstance(self.coordinator.data, tuple):
             telemetry_data, alarms_data = self.coordinator.data
             value = self.get_value(telemetry_data)
-            if value is not None and value != '':
-                _LOGGER.debug("Value from telemetry for %s: %s", self._name, value)
-                if base_attribute in self.ALARM_ATTRIBUTES:
-                    interpreted_value = self.interpret_alarm(base_attribute, value)
-                    return interpreted_value
-                return value
-            value = self.get_value(alarms_data)
-            if value is not None and value != '':
-                _LOGGER.debug("Value from alarms for %s: %s", self._name, value)
-                if base_attribute in self.ALARM_ATTRIBUTES:
-                    interpreted_value = self.interpret_alarm(base_attribute, value)
-                    return interpreted_value
-                return value
-            _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
+            
+            if value is None or value == '':
+                value = self.get_value(alarms_data)
+
         else:
             value = self.get_value(self.coordinator.data)
-            if value is not None and value != '':
-                _LOGGER.debug("Value from coordinator for %s: %s", self._name, value)
-                if base_attribute in self.ALARM_ATTRIBUTES:
-                    interpreted_value = self.interpret_alarm(base_attribute, value)
-                    return interpreted_value
-                return value
-            _LOGGER.warning("No data found in coordinator for %s", self._name)
+        
+        if value is None or value == '':
+            _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
+            return None
 
+        # Interpret the value for alarm sensors
+        if base_attribute in self.ALARM_ATTRIBUTES:
+            return str(self.interpret_alarm(base_attribute, value))
+        
+        return value
+
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement."""
+        if self._attribute in self.ALARM_ATTRIBUTES:
+            return None  # No unit for alarms
+        return self._unit
     
     def get_value(self, telemetry_data):
         """Retrieve the value based on the attribute."""
@@ -285,11 +291,6 @@ class SeplosBMSSensorBase(CoordinatorEntity):
             _LOGGER.debug("Returning attribute value for %s: %s", self._attribute, value)
             return value
 
-            
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit
 
     @property
     def icon(self):
@@ -377,10 +378,109 @@ async def async_setup_entry(hass, entry, async_add_entities):
         SeplosBMSSensorBase(coordinator, port, "disconnectionState0", "Disconnection State 0", ""),
         SeplosBMSSensorBase(coordinator, port, "disconnectionState1", "Disconnection State 1", ""),
     ]
+    
+    await coordinator.async_refresh()  # Fetch data again before adding entities
+
+    class DerivedSeplosBMSSensor(SeplosBMSSensorBase):
+        """Derived class for sensors that are calculated from other sensors."""
+
+        def __init__(self, *args, **kwargs):
+            self._calc_function = kwargs.pop("calc_function", None)
+            super().__init__(*args, **kwargs)
+
+        @property
+        def state(self):
+            if self._calc_function:
+                result = self._calc_function(self.coordinator.data)
+                _LOGGER.debug("Derived sensor '%s' calculated value: %s", self._name, result)
+                return result
+            return super().state
+
+            
+    def battery_watts(data):
+        telemetry, _ = data  # Unpack the tuple
+        volts = getattr(telemetry, 'portVoltage', 0.0)
+        amps = getattr(telemetry, 'current', 0.0)
+        return volts * amps
+
+    def remaining_watts(data):
+        telemetry, _ = data  # Unpack the tuple
+        volts = getattr(telemetry, 'voltage', 0.0)
+        amps = getattr(telemetry, 'resCap', 0.0)
+        return volts * amps
+
+    def capacity_watts(data):
+        telemetry, _ = data  # Unpack the tuple
+        volts = getattr(telemetry, 'voltage', 0.0)
+        amps = getattr(telemetry, 'capacity', 0.0)
+        return volts * amps
+
+    def full_charge_amps(data):
+        telemetry, _ = data  # Unpack the tuple
+        remaining = getattr(telemetry, 'resCap', 0.0)
+        capacity = getattr(telemetry, 'capacity', 0.0)
+        return capacity - remaining
+
+    def full_charge_watts(data):
+        telemetry, _ = data  # Unpack the tuple
+        voltage = getattr(telemetry, 'voltage', 0.0)
+        resCap = getattr(telemetry, 'resCap', 0.0)
+        capacity = getattr(telemetry, 'capacity', 0.0)
+        remaining_w = voltage * resCap
+        cap_w = voltage * capacity
+        return cap_w - remaining_w
+    
+    def get_cell_extremes_and_difference(data):
+        telemetry, _ = data
+        # Extract cell voltages into a list
+        cell_voltages = getattr(telemetry, f"cellVoltage", 0.0)
+        # Find the highest and lowest cell voltages and their indices
+        highest_cell_voltage = max(cell_voltages)
+        lowest_cell_voltage = min(cell_voltages)
+
+        highest_cell_number = cell_voltages.index(highest_cell_voltage) + 1  # +1 because cells start from 1, not 0
+        lowest_cell_number = cell_voltages.index(lowest_cell_voltage) + 1
+
+        # Calculate the difference
+        difference = highest_cell_voltage - lowest_cell_voltage
+
+        return highest_cell_voltage, lowest_cell_voltage, difference, highest_cell_number, lowest_cell_number
+
+    def highest_cell_voltage(data):
+        telemetry, _ = data  # Unpack the tuple
+        return get_cell_extremes_and_difference(data)[0]
+
+    def lowest_cell_voltage(data):
+        telemetry, _ = data  # Unpack the tuple
+        return get_cell_extremes_and_difference(data)[1]
+
+    def cell_voltage_difference(data):
+        telemetry, _ = data  # Unpack the tuple
+        return get_cell_extremes_and_difference(data)[2]
+
+    def highest_cell_number(data):
+        telemetry, _ = data  # Unpack the tuple
+        return get_cell_extremes_and_difference(data)[3]
+
+    def lowest_cell_number(data):
+        telemetry, _ = data  # Unpack the tuple
+        return get_cell_extremes_and_difference(data)[4]
+        
+    derived_sensors = [
+        DerivedSeplosBMSSensor(coordinator, port, None, "Battery Watts", "W", calc_function=battery_watts),
+        DerivedSeplosBMSSensor(coordinator, port, None, "Remaining Watts", "W", calc_function=remaining_watts),
+        DerivedSeplosBMSSensor(coordinator, port, None, "Capacity - Watts", "W", calc_function=capacity_watts),
+        DerivedSeplosBMSSensor(coordinator, port, None, "Full Charge - Amps", "Ah", calc_function=full_charge_amps),
+        DerivedSeplosBMSSensor(coordinator, port, None, "Full Charge - Watts", "W", calc_function=full_charge_watts),
+        DerivedSeplosBMSSensor(coordinator, port, None, "Highest Cell Voltage", "mV", calc_function=highest_cell_voltage),
+        DerivedSeplosBMSSensor(coordinator, port, None, "Lowest Cell Voltage", "mV", calc_function=lowest_cell_voltage),
+        DerivedSeplosBMSSensor(coordinator, port, None, "Cell Voltage Difference", "mV", calc_function=cell_voltage_difference),
+        DerivedSeplosBMSSensor(coordinator, port, None, "Cell Number of Highest Voltage", "", calc_function=highest_cell_number),
+        DerivedSeplosBMSSensor(coordinator, port, None, "Cell Number of Lowest Voltage", "", calc_function=lowest_cell_number),
+    ]
 
     # Now, let's combine all the sensors into one list:
-
-    sensors = cell_voltage_sensors + temperature_sensors + cell_alarm_sensors + temp_alarm_sensors + general_sensors
+    sensors = cell_voltage_sensors + temperature_sensors + cell_alarm_sensors + temp_alarm_sensors + general_sensors + derived_sensors
 
 
     async_add_entities(sensors, True)
