@@ -1,47 +1,60 @@
----
 name: "Feature request"
-description: "Suggest an idea for this project"
+description: "Suggest an idea or enhancement for this project"
 labels: "Feature+Request"
+
 body:
 - type: markdown
   attributes:
-    value: Before you open a new feature request, search through the existing feature requests to see if others have had the same idea.
-- type: checkboxes
+    value: |
+      ## Proposing a Feature? 💡
+
+      - **First**, search if a similar request has already been proposed. Let's avoid duplicates.
+      - **Describe** the problem and solution in detail. It helps us understand your perspective and needs.
+
+- type: input
   attributes:
-    label: Checklist
+    label: "BMS Version 🔄"
+    description: "Specify the version of the BMS you are using. It can help contextualize the feature request."
+  validations:
+    required: true
+  
+- type: dropdown
+  attributes:
+    label: "Connection Method 🌐"
+    description: "How is the BMS connected to your system? This can give insights into the applicability of the feature."
     options:
-      - label: I have filled out the template to the best of my ability.
-        required: true
-      - label: This only contains 1 feature request (if you have multiple feature requests, open one feature request for each feature request).
-        required: true
-      - label: This issue is not a duplicate feature request of [previous feature requests](https://github.com/ludeeus/integration_blueprint/issues?q=is%3Aissue+label%3A%22Feature+Request%22+).
-        required: true
+      - "USB-RS485"
+      - "ESP8266"
+      - "ESP32"
+      - "Other (please specify)"
+  validations:
+    required: true
 
 - type: textarea
   attributes:
-    label: "Is your feature request related to a problem? Please describe."
-    description: "A clear and concise description of what the problem is."
+    label: "Problem Description 🤔"
+    description: "Is your feature request related to a problem? Please provide a clear description of what the problem is."
     placeholder: "I'm always frustrated when [...]"
   validations:
     required: true
 
 - type: textarea
   attributes:
-    label: "Describe the solution you'd like"
-    description: "A clear and concise description of what you want to happen."
+    label: "Proposed Solution 🛠️"
+    description: "Describe the solution you'd like to see implemented. Be as detailed as possible."
   validations:
     required: true
 
 - type: textarea
   attributes:
-    label: "Describe alternatives you've considered"
-    description: "A clear and concise description of any alternative solutions or features you've considered."
+    label: "Alternatives Considered 🔄"
+    description: "Have you thought of other ways to address this problem or similar features? Share them here."
   validations:
-    required: true
+    required: false
 
 - type: textarea
   attributes:
-    label: "Additional context"
-    description: "Add any other context or screenshots about the feature request here."
+    label: "Additional context 📄"
+    description: "Provide any other relevant details, context, or screenshots about the feature request. It helps us get a fuller picture."
   validations:
-    required: true
+    required: false
