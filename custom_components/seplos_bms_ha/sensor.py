@@ -343,13 +343,15 @@ async def async_setup_entry(hass, entry, async_add_entities):
     # First, for the cellVoltage and temperatures, we'll iterate over their length to create individual sensors:
 
     cell_voltage_sensors = [SeplosBMSSensorBase(coordinator, port, f"cellVoltage[{idx}]", f"Cell Voltage {idx+1}", "mV") for idx in range(16)]
-    temperature_sensors = [SeplosBMSSensorBase(coordinator, port, f"temperatures[{idx}]", f"Temperature {idx+1}", "°C") for idx in range(6)]
+    temperature_sensors = [SeplosBMSSensorBase(coordinator, port, f"temperatures[{idx}]", f"Cell Temperature {idx+1}", "°C") for idx in range(4)]
     cell_alarm_sensors = [SeplosBMSSensorBase(coordinator, port, f"cellAlarm[{idx}]", f"Cell Alarm {idx+1}", "") for idx in range(16)]
     temp_alarm_sensors = [SeplosBMSSensorBase(coordinator, port, f"tempAlarm[{idx}]", f"Temperature Alarm {idx+1}", "") for idx in range(6)]
 
     # Now let's create the rest of the sensors:
 
     general_sensors = [
+        SeplosBMSSensorBase(coordinator, port, "temperatures[4]", "Environment Temperature", "°C"),
+        SeplosBMSSensorBase(coordinator, port, "temperatures[5]", "Power Temperature", "°C"),
         SeplosBMSSensorBase(coordinator, port, "current", "Current", "A"),
         SeplosBMSSensorBase(coordinator, port, "voltage", "Voltage", "V"),
         SeplosBMSSensorBase(coordinator, port, "cellsCount", "Cell Count", ""),
