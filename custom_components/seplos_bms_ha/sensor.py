@@ -1,3 +1,6 @@
+
+            
+
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -26,7 +29,194 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         "alarmEvent7", "onOffState", "equilibriumState0", "equilibriumState1",
         "systemState", "disconnectionState0", "disconnectionState1"
     ]
-    
+    # Define the mappings for each alarm event
+    ALARM_MAPPINGS = {
+        "alarmEvent0": [
+            "No Alarm", 
+            "Alarm that analog quantity reaches the lower limit", 
+            "Alarm that analog quantity reaches the upper limit", 
+            "Other alarms"
+        ],
+        "alarmEvent1": [
+            "Voltage sensor fault", 
+            "Temperature sensor fault", 
+            "Current sensor fault", 
+            "Key switch fault", 
+            "Cell voltage dropout fault", 
+            "Charge switch fault", 
+            "Discharge switch fault", 
+            "Current limit switch fault"
+        ],
+        "alarmEvent2": [
+            "Monomer high voltage alarm", 
+            "Monomer overvoltage protection", 
+            "Monomer low voltage alarm", 
+            "Monomer under voltage protection", 
+            "High voltage alarm for total voltage", 
+            "Overvoltage protection for total voltage", 
+            "Low voltage alarm for total voltage", 
+            "Under voltage protection for total voltage"
+        ],
+        "alarmEvent3": [
+            "Charge high temperature alarm", 
+            "Charge over temperature protection", 
+            "Charge low temperature alarm", 
+            "Charge under temperature protection", 
+            "Discharge high temperature alarm", 
+            "Discharge over temperature protection", 
+            "Discharge low temperature alarm", 
+            "Discharge under temperature protection"
+        ],
+        "alarmEvent4": [
+            "Environment high temperature alarm", 
+            "Environment over temperature protection", 
+            "Environment low temperature alarm", 
+            "Environment under temperature protection", 
+            "Power over temperature protection", 
+            "Power high temperature alarm", 
+            "Cell low temperature heating", 
+            "Reservation bit"
+        ],
+        "alarmEvent5": [
+            "Charge over current alarm", 
+            "Charge over current protection", 
+            "Discharge over current alarm", 
+            "Discharge over current protection", 
+            "Transient over current protection", 
+            "Output short circuit protection", 
+            "Transient over current lockout", 
+            "Output short circuit lockout"
+        ],
+        "alarmEvent6": [
+            "Charge high voltage protection", 
+            "Intermittent recharge waiting", 
+            "Residual capacity alarm", 
+            "Residual capacity protection", 
+            "Cell low voltage charging prohibition", 
+            "Output reverse polarity protection", 
+            "Output connection fault", 
+            "Inside bit"
+        ],
+        "alarmEvent7": [
+            "Inside bit", 
+            "Inside bit", 
+            "Inside bit", 
+            "Inside bit", 
+            "Automatic charging waiting", 
+            "Manual charging waiting", 
+            "Inside bit", 
+            "Inside bit"
+        ],
+        "alarmEvent8": [
+            "EEP storage fault", 
+            "RTC error", 
+            "Voltage calibration not performed", 
+            "Current calibration not performed", 
+            "Zero calibration not performed", 
+            "Inside bit", 
+            "Inside bit", 
+            "Inside bit"
+        ],
+        "cellAlarm": {
+            0: "No Alarm",
+            1: "Alarm"
+        },
+        "tempAlarm": {
+            0: "No Alarm",
+            1: "Alarm"
+        },
+        "currentAlarm": {
+            1: "Charge/Discharge Current Alarm"
+        },
+        "voltageAlarm": {
+            1: "Total Battery Voltage Alarm"
+        }
+    }
+    ALARM_MAPPINGS.update({
+        "onOffState": [
+            "Discharge switch state",
+            "Charge switch state",
+            "Current limit switch state",
+            "Heating switch state",
+            "Reservation bit",
+            "Reservation bit",
+            "Reservation bit",
+            "Reservation bit"
+        ],
+        "equilibriumState0": [
+            "Cell 01 equilibrium",
+            "Cell 02 equilibrium",
+            "Cell 03 equilibrium",
+            "Cell 04 equilibrium",
+            "Cell 05 equilibrium",
+            "Cell 06 equilibrium",
+            "Cell 07 equilibrium",
+            "Cell 08 equilibrium"
+        ],
+        "equilibriumState1": [
+            "Cell 09 equilibrium",
+            "Cell 10 equilibrium",
+            "Cell 11 equilibrium",
+            "Cell 12 equilibrium",
+            "Cell 13 equilibrium",
+            "Cell 14 equilibrium",
+            "Cell 15 equilibrium",
+            "Cell 16 equilibrium"
+        ],
+        "systemState": [
+            "Discharge",
+            "Charge",
+            "Floating charge",
+            "Reservation bit",
+            "Standby",
+            "Shutdown",
+            "Reservation bit",
+            "Reservation bit"
+        ],
+        "disconnectionState0": [
+            "Cell 01 disconnection",
+            "Cell 02 disconnection",
+            "Cell 03 disconnection",
+            "Cell 04 disconnection",
+            "Cell 05 disconnection",
+            "Cell 06 disconnection",
+            "Cell 07 disconnection",
+            "Cell 08 disconnection"
+        ],
+        "disconnectionState1": [
+            "Cell 09 disconnection",
+            "Cell 10 disconnection",
+            "Cell 11 disconnection",
+            "Cell 12 disconnection",
+            "Cell 13 disconnection",
+            "Cell 14 disconnection",
+            "Cell 15 disconnection",
+            "Cell 16 disconnection"
+        ]
+    })
+
+    def interpret_alarm(self, event, value):
+        flags = self.ALARM_MAPPINGS.get(event, [])
+
+        if not flags:
+            return f"Unknown event: {event}"
+
+        # Special handling for temperatureAlarm
+        if event.startswith("tempAlarm"):
+            return self.ALARM_MAPPINGS["tempAlarm"].get(value, "Unknown value")
+ 
+        # Special handling for cellAlarm
+        if event.startswith("cellAlarm"):
+            return self.ALARM_MAPPINGS["cellAlarm"].get(value, "Unknown value")
+
+        if event == "alarmEvent0":
+            return flags[value] if 0 <= value < len(flags) else "Unknown value"
+
+        # For other alarm events, interpret them as bit flags
+        triggered_alarms = [flag for idx, flag in enumerate(flags) if value & (1 << idx)]
+
+        return ', '.join(triggered_alarms) if triggered_alarms else "No Alarm"
+   
     def __init__(self, coordinator, port, attribute, name, unit=None, icon=None):
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -49,25 +239,36 @@ class SeplosBMSSensorBase(CoordinatorEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        # If the coordinator's data is a tuple, access both telemetry and alarms data
+        base_attribute = self._attribute.split('[')[0] if '[' in self._attribute else self._attribute
+
         if isinstance(self.coordinator.data, tuple):
             telemetry_data, alarms_data = self.coordinator.data
-            # First, try to get the value from the telemetry data
             value = self.get_value(telemetry_data)
-            if value is not None:
-                _LOGGER.debug("For sensor %s, attribute %s has value (from telemetry): %s", self._name, self._attribute, value)
+            if value is not None and value is not '':
+                _LOGGER.debug("Value from telemetry for %s: %s", self._name, value)
+                if base_attribute in self.ALARM_ATTRIBUTES:
+                    interpreted_value = self.interpret_alarm(base_attribute, value)
+                    return interpreted_value
                 return value
-            # If the value is None, then try to get it from the alarms data
             value = self.get_value(alarms_data)
-            _LOGGER.debug("For sensor %s, attribute %s has value (from alarms): %s", self._name, self._attribute, value)
-            return value
+            if value is not None and value is not '':
+                _LOGGER.debug("Value from alarms for %s: %s", self._name, value)
+                if base_attribute in self.ALARM_ATTRIBUTES:
+                    interpreted_value = self.interpret_alarm(base_attribute, value)
+                    return interpreted_value
+                return value
+            _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
         else:
             value = self.get_value(self.coordinator.data)
-            _LOGGER.debug("For sensor %s, attribute %s has value: %s", self._name, self._attribute, value)
-            return value
+            if value is not None and value is not '':
+                _LOGGER.debug("Value from coordinator for %s: %s", self._name, value)
+                if base_attribute in self.ALARM_ATTRIBUTES:
+                    interpreted_value = self.interpret_alarm(base_attribute, value)
+                    return interpreted_value
+                return value
+            _LOGGER.warning("No data found in coordinator for %s", self._name)
 
-
-
+    
     def get_value(self, telemetry_data):
         """Retrieve the value based on the attribute."""
         # If the attribute name contains a bracket, it's trying to access a list
@@ -79,16 +280,13 @@ class SeplosBMSSensorBase(CoordinatorEntity):
                 list_data = getattr(telemetry_data, attr)
                 if index < len(list_data):
                     value = list_data[index]
-                    if attr in self.ALARM_ATTRIBUTES and value == 0:
-                        _LOGGER.debug("Converting 0 to 'No Alarm' for attribute %s", attr)  # Debug line
-                        return "No Alarm"
+                    _LOGGER.debug("Returning list data value for %s[%d]: %s", attr, index, value)
                     return value
         else:
             value = getattr(telemetry_data, self._attribute, None)
-            if self._attribute in self.ALARM_ATTRIBUTES and value == 0:
-                _LOGGER.debug("Converting 0 to 'No Alarm' for attribute %s", self._attribute)  # Debug line
-                return "No Alarm"
+            _LOGGER.debug("Returning attribute value for %s: %s", self._attribute, value)
             return value
+
             
     @property
     def unit_of_measurement(self):
@@ -141,13 +339,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
         update_interval=timedelta(seconds=10),  # Define how often to fetch data
     )
 
-
     await coordinator.async_refresh()  # Fetch data once before adding entities
 
     # First, for the cellVoltage and temperatures, we'll iterate over their length to create individual sensors:
 
-    cell_voltage_sensors = [SeplosBMSSensorBase(coordinator, port, f"cellVoltage[{idx}]", f"Cell Voltage {idx+1}", "V") for idx in range(16)]
-    cell_voltage_sensors = [SeplosBMSSensorBase(coordinator, port, f"cellVoltage[{idx}]", f"Cell Voltage {idx+1}", "V") for idx in range(16)]
+    cell_voltage_sensors = [SeplosBMSSensorBase(coordinator, port, f"cellVoltage[{idx}]", f"Cell Voltage {idx+1}", "mV") for idx in range(16)]
     temperature_sensors = [SeplosBMSSensorBase(coordinator, port, f"temperatures[{idx}]", f"Temperature {idx+1}", "°C") for idx in range(6)]
     cell_alarm_sensors = [SeplosBMSSensorBase(coordinator, port, f"cellAlarm[{idx}]", f"Cell Alarm {idx+1}", "") for idx in range(16)]
     temp_alarm_sensors = [SeplosBMSSensorBase(coordinator, port, f"tempAlarm[{idx}]", f"Temperature Alarm {idx+1}", "") for idx in range(6)]
