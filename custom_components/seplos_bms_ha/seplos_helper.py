@@ -1,6 +1,18 @@
 import serial
 import time
+import logging
+_LOGGER = logging.getLogger(__name__)
 
+def send_serial_command(command: str, port: str, baudrate: int = 19200, timeout: int = 2) -> str:
+    """
+    Send a serial command and receive the response.
+    """
+    with serial.Serial(port, baudrate=baudrate, timeout=timeout) as ser:
+        ser.write(command.encode())
+        time.sleep(0.5)
+        return ser.read(ser.in_waiting).decode().replace('\r', '').replace('\n', '')
+        
+        
 class Telemetry:
     def __init__(self):
         self.cellsCount = 0
@@ -17,40 +29,25 @@ class Telemetry:
         self.cycles = 0
         self.soh = 0
         self.portVoltage = 0
-
-class Alarms:
-    def __init__(self):
-        self.cellsCount = 0
-        self.cellAlarm = []
-        self.tempCount = 0
-        self.tempAlarm = []
-        self.currentAlarm = 0
-        self.voltageAlarm = 0
-        self.customAlarms = 0
-        self.alarmEvent0 = 0
-        self.alarmEvent1 = 0
-        self.alarmEvent2 = 0
-        self.alarmEvent3 = 0
-        self.alarmEvent4 = 0
-        self.alarmEvent5 = 0
-        self.onOffState = 0
-        self.equilibriumState0 = 0
-        self.equilibriumState1 = 0
-        self.systemState = 0
-        self.disconnectionState0 = 0
-        self.disconnectionState1 = 0
-        self.alarmEvent6 = 0
-        self.alarmEvent7 = 0
         
-def send_serial_command(command: str, port: str, baudrate: int = 19200, timeout: int = 1) -> str:
-    """
-    Send a serial command and receive the response.
-    """
-    with serial.Serial(port, baudrate=baudrate, timeout=timeout) as ser:
-        ser.write(command.encode())
-        time.sleep(0.1)
-        return ser.read(ser.in_waiting).decode()
-
+    def __str__(self):
+        return (
+            f"cellsCount: {self.cellsCount}, "
+            f"cellVoltage: {self.cellVoltage}, "
+            f"tempCount: {self.tempCount}, "
+            f"temperatures: {self.temperatures}, "
+            f"current: {self.current}, "
+            f"voltage: {self.voltage}, "
+            f"resCap: {self.resCap}, "
+            f"customNumber: {self.customNumber}, "
+            f"capacity: {self.capacity}, "
+            f"soc: {self.soc}, "
+            f"ratedCapacity: {self.ratedCapacity}, "
+            f"cycles: {self.cycles}, "
+            f"soh: {self.soh}, "
+            f"portVoltage: {self.portVoltage}"
+        )
+ 
 
 def parse_telemetry_info(info_str):
     result = Telemetry()
@@ -91,6 +88,58 @@ def parse_telemetry_info(info_str):
     result.portVoltage = int(info_str[cursor:cursor+4], 16) / 100
 
     return result
+    
+    
+       
+class Alarms:
+    def __init__(self):
+        self.cellsCount = 0
+        self.cellAlarm = []
+        self.tempCount = 0
+        self.tempAlarm = []
+        self.currentAlarm = 0
+        self.voltageAlarm = 0
+        self.customAlarms = 0
+        self.alarmEvent0 = 0
+        self.alarmEvent1 = 0
+        self.alarmEvent2 = 0
+        self.alarmEvent3 = 0
+        self.alarmEvent4 = 0
+        self.alarmEvent5 = 0
+        self.onOffState = 0
+        self.equilibriumState0 = 0
+        self.equilibriumState1 = 0
+        self.systemState = 0
+        self.disconnectionState0 = 0
+        self.disconnectionState1 = 0
+        self.alarmEvent6 = 0
+        self.alarmEvent7 = 0
+        
+    def __str__(self):
+        return (
+            f"cellsCount: {self.cellsCount}, "
+            f"cellAlarm: {self.cellAlarm}, "
+            f"tempCount: {self.tempCount}, "
+            f"tempAlarm: {self.tempAlarm}, "
+            f"currentAlarm: {self.currentAlarm}, "
+            f"voltageAlarm: {self.voltageAlarm}, "
+            f"customAlarms: {self.customAlarms}, "
+            f"alarmEvent0: {self.alarmEvent0}, "
+            f"alarmEvent1: {self.alarmEvent1}, "
+            f"alarmEvent2: {self.alarmEvent2}, "
+            f"alarmEvent3: {self.alarmEvent3}, "
+            f"alarmEvent4: {self.alarmEvent4}, "
+            f"alarmEvent5: {self.alarmEvent5}, "
+            f"onOffState: {self.onOffState}, "
+            f"equilibriumState0: {self.equilibriumState0}, "
+            f"equilibriumState1: {self.equilibriumState1}, "
+            f"systemState: {self.systemState}, "
+            f"disconnectionState0: {self.disconnectionState0}, "
+            f"disconnectionState1: {self.disconnectionState1}, "
+            f"alarmEvent6: {self.alarmEvent6}, "
+            f"alarmEvent7: {self.alarmEvent7}"
+        )
+              
 def parse_teledata_info(info_str):
     result = Alarms()
     cursor = 4
@@ -131,12 +180,13 @@ def calc_check_sum(s):
     checksum_value = (total_sum ^ 0xFFFF) + 1
     return format(checksum_value, 'X').zfill(4)  # Convert to uppercase hexadecimal and ensure it's 4 chars long
 
-
 def form_battery_id_str(address):
     return format(address, '02x')
 
-
 def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=True, debug=False):
+    if msg.startswith("~"):
+        msg = msg[1:]  # remove the tilde at the beginning
+        
     check_sum = msg[-4:]
     msg_wo_chk_sum = msg[:-4]
     calculated_check_sum = calc_check_sum(msg_wo_chk_sum)
