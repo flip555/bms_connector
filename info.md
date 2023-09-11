@@ -51,3 +51,11 @@ Your inputs to bolster this integration will be wholeheartedly embraced! Dive in
 
 ## 🆘 Support
 Facing a hiccup? Need a hand? Feel free to raise an issue on the [GitHub repository](https://github.com/flip555/seplos_bms_ha/issues).
+
+## 📚 References
+
+- **ChatGPT**: Developed by OpenAI, ChatGPT is a large language model capable of understanding and generating human-like text.
+- **Seplos Protocol Manuals**: You can find these in the [assets/](https://github.com/flip555/seplos_bms_ha/tree/main/assets) directory of this repository.
+- **Integration Blueprint**: A valuable template for creating custom components for Home Assistant. [GitHub Repository](https://github.com/ludeeus/integration_blueprint)
+- **ESPHome Seplos BMS**: A related project which integrates Seplos BMS with ESPHome. [GitHub Repository](https://github.com/syssi/esphome-seplos-bms)
+- **Modbus Seplos BMS Reader**: A Modbus implementation for reading Seplos BMS data. [GitHub Repository](https://github.com/g992/modbus-seplos-bms-reader)
