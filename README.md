@@ -1,47 +1,53 @@
-# Notice
+# Seplos BMS HA Custom Integration for Home Assistant
 
-The component and platforms in this repository are not meant to be used by a
-user, but as a "blueprint" that custom component developers can build
-upon, to make more awesome stuff.
+Easily connect and integrate the Seplos Battery Management Systems (BMS) with Home Assistant. This integration offers detailed sensor readings, alarm notifications, and a plethora of valuable telemetry data directly from the BMS.
 
-HAVE FUN! 😎
+[![GitHub Link](https://img.shields.io/badge/GitHub-Repo-green?style=for-the-badge&logo=github)](https://github.com/flip555/seplos_bms_ha)
 
-## Why?
+## 🌟 Features
+### Seplos BMS 2.0
+- **Rapid Data Retrieval**: Fetch cell voltage for every cell in the system.
+- **Advanced Alarm Monitoring**: Get unambiguous feedback from different alarm states.
+- **Rich Telemetry Data**: Access vital information like temperatures, currents, and the system state.
+- **Debug Mode**: Dive deep and see the underlying data for thorough insights.
+- **High Frequency Polling**: Refreshes data every 5 seconds for up-to-the-minute updates.
 
-This is simple, by having custom_components look (README + structure) the same
-it is easier for developers to help each other and for users to start using them.
+## 🚧 Upcoming Features
+- Support for Seplos BMS 3.0.
+- Enhanced scanning capability to find all battery packs (Note: Currently focused on pack 0).
+- Improved config_flow checks and additional options.
+- Multilingual support with translations.
+- Codebase optimization and removal of unnecessary blueprint integration.
+- Robust error handling for better stability.
 
-If you are a developer and you want to add things to this "blueprint" that you think more
-developers will have use for, please open a PR to add it :)
+## 🔧 Installation
 
-## What?
+### Via HACS (Home Assistant Community Store) as a Custom Repository
+1. Make sure [HACS](https://hacs.xyz/) is installed.
+2. Head over to the HACS Integrations page.
+3. Tap on the three dots in the upper right corner and pick "Custom repositories".
+4. Plug in the URL `https://github.com/flip555/seplos_bms_ha` and opt for `Integration` in the category dropdown.
+5. Hit "Add".
+6. You'll now find `Seplos BMS HA` in the Integrations list within HACS. Simply install it.
 
-This repository contains multiple files, here is a overview:
+### Manual Installation
+1. Either clone this repo or grab the zip.
+2. Transfer the `seplos_bms_ha` folder from the repository into the `custom_components` directory within your Home Assistant configuration.
+3. Give Home Assistant a quick restart.
 
-File | Purpose | Documentation
--- | -- | --
-`.devcontainer.json` | Used for development/testing with Visual Studio Code. | [Documentation](https://code.visualstudio.com/docs/remote/containers)
-`.github/ISSUE_TEMPLATE/*.yml` | Templates for the issue tracker | [Documentation](https://help.github.com/en/github/building-a-strong-community/configuring-issue-templates-for-your-repository)
-`.vscode/tasks.json` | Tasks for the devcontainer. | [Documentation](https://code.visualstudio.com/docs/editor/tasks)
-`custom_components/integration_blueprint/*` | Integration files, this is where everything happens. | [Documentation](https://developers.home-assistant.io/docs/creating_component_index)
-`CONTRIBUTING.md` | Guidelines on how to contribute. | [Documentation](https://help.github.com/en/github/building-a-strong-community/setting-guidelines-for-repository-contributors)
-`LICENSE` | The license file for the project. | [Documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository)
-`README.md` | The file you are reading now, should contain info about the integration, installation and configuration instructions. | [Documentation](https://help.github.com/en/github/writing-on-github/basic-writing-and-formatting-syntax)
-`requirements.txt` | Python packages used for development/lint/testing this integration. | [Documentation](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
+## ⚙️ Configuration
+1. Access the Integrations page inside the Home Assistant UI.
+2. Tap the "+" icon located at the bottom.
+3. Type in "Seplos BMS HA" and commence the configuration process.
+4. Pinpoint the suitable source for your hardware.
+5. For users with the `RS485-USB` setup, punch in the USB port following the template `/dev/ttyUSBX`, where `X` represents the port digit (for instance, `/dev/ttyUSB0`).
+6. Click "Submit" to seal the deal.
 
-## How?
+## 📸 Screenshots
+![Dashboard Visuals](https://github.com/flip555/seplos_bms_ha/assets/dashboard.png)
 
-1. Create a new repository in GitHub, using this repository as a template by clicking the "Use this template" button in the GitHub UI.
-1. Open your new repository in Visual Studio Code devcontainer (Preferably with the "`Dev Containers: Clone Repository in Named Container Volume...`" option).
-1. Rename all instances of the `integration_blueprint` to `custom_components/<your_integration_domain>` (e.g. `custom_components/awesome_integration`).
-1. Rename all instances of the `Integration Blueprint` to `<Your Integration Name>` (e.g. `Awesome Integration`).
-1. Run the `scripts/develop` to start HA and test out your new integration.
+## 🤝 Contributing
+Your inputs to bolster this integration will be wholeheartedly embraced! Dive into our [Contribution Guidelines](CONTRIBUTING.md) for an in-depth look.
 
-## Next steps
-
-These are some next steps you may want to look into:
-- Add tests to your integration, [`pytest-homeassistant-custom-component`](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component) can help you get started.
-- Add brand images (logo/icon) to https://github.com/home-assistant/brands.
-- Create your first release.
-- Share your integration on the [Home Assistant Forum](https://community.home-assistant.io/).
-- Submit your integration to the [HACS](https://hacs.xyz/docs/publish/start).
+## 🆘 Support
+Facing a hiccup? Need a hand? Feel free to raise an issue on the [GitHub repository](https://github.com/flip555/seplos_bms_ha/issues).
