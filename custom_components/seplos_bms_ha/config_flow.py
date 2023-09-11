@@ -10,8 +10,8 @@ class SeplosBMSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     def is_valid_port(self, port: str) -> bool:
         """Validate if the provided port exists and has permissions."""
-        # You can expand on this logic, e.g., by checking the file system or trying to open the port.
-        if port.startswith("/dev/ttyUSB") and 0 <= int(port[-1]) <= 9:  # This checks if port ends with a single digit after "/dev/ttyUSB"
+        # Validate if it's a valid /dev/ path or the longer /dev/serial/... path
+        if port.startswith("/dev/ttyUSB") or port.startswith("/dev/serial/by-id/"):
             return True
         return False
         
@@ -27,15 +27,11 @@ class SeplosBMSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 else:
                     return self.async_create_entry(title="Seplos BMS", data=user_input)
 
-            # For ESPHome device, create an entry (assuming no validation needed)
-            elif user_input.get("source") == "ESPHome device":
-                return self.async_create_entry(title="Seplos BMS", data=user_input)
-
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
-                vol.Required("source"): vol.In(["ESPHome device", "RS485-USB"]),
-                vol.Optional("usb_port", default=""): str,  # This field will be visible regardless. Advanced UI tweaks might be required to make this dynamic.
+                vol.Required("source"): vol.In(["RS485-USB"]),
+                vol.Optional("usb_port", default=""): str,  
             }),
             errors=_errors,
         )
