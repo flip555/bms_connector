@@ -336,7 +336,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         _LOGGER,
         name="seplos_bms_sensor",
         update_method=async_update_data,
-        update_interval=timedelta(seconds=10),  # Define how often to fetch data
+        update_interval=timedelta(seconds=5),  # Define how often to fetch data
     )
 
     await coordinator.async_refresh()  # Fetch data once before adding entities
