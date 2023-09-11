@@ -44,7 +44,7 @@ Easily connect and integrate the Seplos Battery Management Systems (BMS) with Ho
 6. Click "Submit" to seal the deal.
 
 ## 📸 Screenshots
-![Dashboard Visuals](https://github.com/flip555/seplos_bms_ha/assets/dashboard.png)
+![Dashboard Visuals](https://github.com/flip555/seplos_bms_ha/blob/main/assets/dashboard.png)
 
 ## 🤝 Contributing
 Your inputs to bolster this integration will be wholeheartedly embraced! Dive into our [Contribution Guidelines](CONTRIBUTING.md) for an in-depth look.
