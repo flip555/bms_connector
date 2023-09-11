@@ -67,7 +67,12 @@ def parse_telemetry_info(info_str):
         result.temperatures.append(temperature)
         cursor += 4
 
-    result.current = int(info_str[cursor:cursor+4], 16) / 100
+    result.current = int(info_str[cursor:cursor+4], 16)
+    # Adjust the current value for integer underflow
+    if result.current > 32767:  # Or another reasonable threshold
+        result.current -= 65536  # Correct the value for a 16-bit integer underflow
+    result.current /= 100  # Convert to the actual value
+
     cursor += 4
     result.voltage = int(info_str[cursor:cursor+4], 16) / 100
     cursor += 4
