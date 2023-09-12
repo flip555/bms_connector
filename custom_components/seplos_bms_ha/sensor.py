@@ -5,7 +5,6 @@ from .serial_comms import send_serial_command
 from .seplos_helper import extract_data_from_message
 import asyncio
 import logging
-import time
 from datetime import timedelta
 from .const import (
     LOGGER,
@@ -34,7 +33,6 @@ from .v2_calc_functions import (
     highest_temp_sensor,
     lowest_temp_sensor,
 )
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -87,7 +85,6 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         prefix = f"sep_bms_ha_{self._battery_address}_" if self._battery_address else "sep_bms_ha_"
         return f"{prefix}{self._name}"
 
-
     @property
     def state(self):
         """Return the state of the sensor."""
@@ -99,11 +96,7 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         value = None
         if isinstance(self.coordinator.data, tuple):
             telemetry_data, alarms_data, battery_address_1_data, battery_address_2_data = self.coordinator.data
-            value = self.get_value(telemetry_data)
-            
-            if value is None or value == '':
-                value = self.get_value(alarms_data)
-
+            value = self.get_value(telemetry_data) or self.get_value(alarms_data)
         else:
             value = self.get_value(self.coordinator.data)
         
@@ -117,7 +110,6 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         
         return value
 
-
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
@@ -125,7 +117,6 @@ class SeplosBMSSensorBase(CoordinatorEntity):
             return None  # No unit for alarms
         return self._unit
 
-    
     def get_value(self, telemetry_data):
         """Retrieve the value based on the attribute."""
         # If the attribute name contains a bracket, it's trying to access a list
@@ -141,7 +132,6 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         else:
             value = getattr(telemetry_data, self._attribute, None)
             return value
-
 
     @property
     def icon(self):
@@ -243,8 +233,3 @@ async def async_setup_entry(hass, entry, async_add_entities):
     sensors = all_sensors + derived_sensors
 
     async_add_entities(sensors, True)
-
-
-
-
-
