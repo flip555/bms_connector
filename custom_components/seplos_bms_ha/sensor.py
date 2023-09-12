@@ -100,15 +100,20 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         else:
             value = self.get_value(self.coordinator.data)
         
-        if value is None or value == '':
+        if value is None:
             _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
             return None
+        elif value == '':
+            return '0'  # Return '0' as a string when the value is an empty string
+        else:
+            return value  # Return the actual value if it's not None or empty
 
         # Interpret the value for alarm sensors
         if base_attribute in ALARM_ATTRIBUTES:
             return str(self.interpret_alarm(base_attribute, value))
         
         return value
+
 
     @property
     def unit_of_measurement(self):
