@@ -2,17 +2,19 @@
     "config": {
         "step": {
             "user": {
-                "description": "Integrate your Seplos Battery Management System (BMS) with Home Assistant to access detailed sensor readings, alarm notifications, and valuable telemetry data. For installation and troubleshooting, visit the [GitHub Repository](https://github.com/flip555/seplos_bms_ha).",
+                "description": "Integrate your Seplos Battery Management System (BMS) with Home Assistant...",
                 "data": {
                     "source": "Connection Method",
-                    "usb_port": "USB Port (e.g., /dev/ttyUSB0)"
+                    "usb_port": "USB Port (e.g., /dev/ttyUSB0)",
+                    "battery_pack": "Battery Pack (e.g., 0x00) - Coming Soon",
+                    "bms_version": "BMS Version - Coming Soon"
                 }
             }
         },
         "error": {
-            "invalid_port": "The specified USB port is invalid or inaccessible. Ensure the Seplos BMS is connected correctly.",
-            "connection": "Unable to connect to Seplos BMS. Check if the BMS is powered on and properly connected.",
-            "unknown": "An unexpected error occurred. Visit the GitHub repository for support or to raise an issue."
+            "invalid_port": "The specified USB port is invalid or inaccessible...",
+            "connection": "Unable to connect to Seplos BMS. Check if the BMS is powered on and properly connected...",
+            "unknown": "An unexpected error occurred. Visit the GitHub repository for support or to raise an issue..."
         }
     }
 }

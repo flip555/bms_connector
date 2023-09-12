@@ -1,5 +1,3 @@
-# Errors still exist in here - doesn't check battery pack exists properly
-
 from __future__ import annotations
 import voluptuous as vol
 from homeassistant import config_entries, exceptions
@@ -38,16 +36,15 @@ class SeplosBMSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         usb_ports = [(port.device, port.description) for port in serial.tools.list_ports.comports()]
 
         data_schema = vol.Schema({
-            vol.Required("usb_port", description="USB Port", default="/dev/ttyUSB0"): str,
+            vol.Required("usb_port", description="USB Port (e.g., /dev/ttyUSB0)", default="/dev/ttyUSB0"): str,
             vol.Required("battery_pack", description="Battery Pack (e.g., 0x00)", default="0x00"): str,
-            vol.Optional("bms_version", description="BMS Version", default="V2"): vol.In(["V2", "V3 (Coming Soon)"]),
+            vol.Optional("bms_version", description="BMS Version (Coming Soon)", default="V2"): vol.In(["V2", "V3 (Coming Soon)"]),
         })
 
         return self.async_show_form(
             step_id="user",
             data_schema=data_schema,
             errors=_errors,
-            description_placeholders={"usb_ports": usb_ports},
         )
 
     async def async_batterypack_exists(self, battery_pack: str):
