@@ -1,7 +1,8 @@
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .seplos_helper import send_serial_command, extract_data_from_message, Telemetry, Alarms, parse_telemetry_info, parse_teledata_info
+from .serial_comms import send_serial_command
+from .seplos_helper import extract_data_from_message
 import asyncio
 import logging
 import time
@@ -35,7 +36,6 @@ from .v2_calc_functions import (
 )
 
 
-from .seplos_helper import send_serial_command, extract_data_from_message
 _LOGGER = logging.getLogger(__name__)
 
 # Define your two commands to be sent
