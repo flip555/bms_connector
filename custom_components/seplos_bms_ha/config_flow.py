@@ -40,7 +40,7 @@ class SeplosBMSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema({
             vol.Required("usb_port", description="USB Port", default="/dev/ttyUSB0"): str,
             vol.Required("battery_pack", description="Battery Pack (e.g., 0x00)", default="0x00"): str,
-            vol.Optional("bms_version", description="BMS Version", default="V2"): vol.In(["V2", "V3"]),
+            vol.Optional("bms_version", description="BMS Version", default="V2"): vol.In(["V2", "V3 (Coming Soon)"]),
         })
 
         return self.async_show_form(
