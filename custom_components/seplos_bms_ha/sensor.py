@@ -1,7 +1,8 @@
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .seplos_helper import send_serial_command, extract_data_from_message, Telemetry, Alarms, parse_telemetry_info, parse_teledata_info
+from .serial_comms import send_serial_command
+from .seplos_helper import extract_data_from_message
 import asyncio
 import logging
 import time
@@ -15,7 +16,25 @@ from .const import (
     ALARM_ATTRIBUTES,
     ALARM_MAPPINGS
 )
-from .seplos_helper import send_serial_command, extract_data_from_message
+from .v2_calc_functions import (
+    battery_watts,
+    remaining_watts,
+    capacity_watts,
+    full_charge_amps,
+    full_charge_watts,
+    get_cell_extremes_and_difference,
+    highest_cell_voltage,
+    lowest_cell_voltage,
+    cell_voltage_difference,
+    highest_cell_number,
+    lowest_cell_number,
+    highest_temp,
+    lowest_temp,
+    delta_temp,
+    highest_temp_sensor,
+    lowest_temp_sensor,
+)
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -129,8 +148,20 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         """Return the icon of the sensor."""
         return self._icon
 
-
 async def async_setup_entry(hass, entry, async_add_entities):
+    class DerivedSeplosBMSSensor(SeplosBMSSensorBase):
+        def __init__(self, *args, **kwargs):
+            self._calc_function = kwargs.pop("calc_function", None)
+            super().__init__(*args, **kwargs)
+
+        @property
+        def state(self):
+            if self._calc_function:
+                result = self._calc_function(self.coordinator.data)
+                _LOGGER.debug("Derived sensor '%s' calculated value: %s", self._name, result)
+                return result
+            return super().state
+            
     port = entry.data.get("usb_port")  # Get port from the config entry
 
     async def async_update_data():
@@ -144,7 +175,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
         return telemetry, alarms, battery_address_1, battery_address_2
 
-    telemetry, alarms, battery_address_1, battery_address_2 = await async_update_data()
+    telemetry, alarms, battery_address, battery_address_2 = await async_update_data()
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -156,124 +187,45 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     await coordinator.async_refresh() 
 
-    battery_address = battery_address_1
+    all_sensors = (
+        [SeplosBMSSensorBase(coordinator, port, f"cellVoltage[{idx}]", f"Cell Voltage {idx+1}", "mV", battery_address=battery_address) for idx in range(16)] +
+        [SeplosBMSSensorBase(coordinator, port, f"temperatures[{idx}]", f"Cell Temperature {idx+1}", "°C", battery_address=battery_address) for idx in range(4)] +
+        [SeplosBMSSensorBase(coordinator, port, f"cellAlarm[{idx}]", f"Cell Alarm {idx+1}", unit=None, battery_address=battery_address) for idx in range(16)] +
+        [SeplosBMSSensorBase(coordinator, port, f"tempAlarm[{idx}]", f"Temperature Alarm {idx+1}", unit=None, battery_address=battery_address) for idx in range(4)] +
+        [
+            SeplosBMSSensorBase(coordinator, port, "temperatures[4]", "Environment Temperature", "°C", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "temperatures[5]", "Power Temperature", "°C", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "current", "Current", "A", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "voltage", "Voltage", "V", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "cellsCount", "Cell Count", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "tempCount", "Temperature Count", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "resCap", "Residual Capacity", "Ah", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "capacity", "Capacity", "Ah", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "soc", "State of Charge", "%", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "ratedCapacity", "Rated Capacity", "Ah", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "cycles", "Cycles", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "soh", "State of Health", "%", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "portVoltage", "Port Voltage", "V", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "currentAlarm", "Current Alarm", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "voltageAlarm", "Voltage Alarm", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "alarmEvent0", "Alarm Event 0", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "alarmEvent1", "Alarm Event 1", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "alarmEvent2", "Alarm Event 2", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "alarmEvent3", "Alarm Event 3", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "alarmEvent4", "Alarm Event 4", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "alarmEvent5", "Alarm Event 5", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "alarmEvent6", "Alarm Event 6", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "alarmEvent7", "Alarm Event 7", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "onOffState", "On/Off State", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "equilibriumState0", "Equilibrium State 0", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "equilibriumState1", "Equilibrium State 1", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "systemState", "System State", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "disconnectionState0", "Disconnection State 0", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "disconnectionState1", "Disconnection State 1", "", battery_address=battery_address),
+        ]
+    )
 
-    cell_voltage_sensors = [SeplosBMSSensorBase(coordinator, port, f"cellVoltage[{idx}]", f"Cell Voltage {idx+1}", "mV", battery_address=battery_address) for idx in range(16)]
-    temperature_sensors = [SeplosBMSSensorBase(coordinator, port, f"temperatures[{idx}]", f"Cell Temperature {idx+1}", "°C", battery_address=battery_address) for idx in range(4)]
-    cell_alarm_sensors = [SeplosBMSSensorBase(coordinator, port, f"cellAlarm[{idx}]", f"Cell Alarm {idx+1}", unit=None, battery_address=battery_address) for idx in range(16)]
-    temp_alarm_sensors = [SeplosBMSSensorBase(coordinator, port, f"tempAlarm[{idx}]", f"Temperature Alarm {idx+1}", unit=None, battery_address=battery_address) for idx in range(4)]
-
-    general_sensors = [
-        SeplosBMSSensorBase(coordinator, port, "temperatures[4]", "Environment Temperature", "°C", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "temperatures[5]", "Power Temperature", "°C", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "current", "Current", "A", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "voltage", "Voltage", "V", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "cellsCount", "Cell Count", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "tempCount", "Temperature Count", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "resCap", "Residual Capacity", "Ah", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "capacity", "Capacity", "Ah", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "soc", "State of Charge", "%", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "ratedCapacity", "Rated Capacity", "Ah", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "cycles", "Cycles", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "soh", "State of Health", "%", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "portVoltage", "Port Voltage", "V", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "currentAlarm", "Current Alarm", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "voltageAlarm", "Voltage Alarm", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "alarmEvent0", "Alarm Event 0", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "alarmEvent1", "Alarm Event 1", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "alarmEvent2", "Alarm Event 2", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "alarmEvent3", "Alarm Event 3", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "alarmEvent4", "Alarm Event 4", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "alarmEvent5", "Alarm Event 5", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "alarmEvent6", "Alarm Event 6", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "alarmEvent7", "Alarm Event 7", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "onOffState", "On/Off State", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "equilibriumState0", "Equilibrium State 0", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "equilibriumState1", "Equilibrium State 1", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "systemState", "System State", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "disconnectionState0", "Disconnection State 0", "", battery_address=battery_address),
-        SeplosBMSSensorBase(coordinator, port, "disconnectionState1", "Disconnection State 1", "", battery_address=battery_address),
-    ]
-    
-    #await coordinator.async_refresh()
-
-    class DerivedSeplosBMSSensor(SeplosBMSSensorBase):
-        def __init__(self, *args, **kwargs):
-            self._calc_function = kwargs.pop("calc_function", None)
-            super().__init__(*args, **kwargs)
-
-        @property
-        def state(self):
-            if self._calc_function:
-                result = self._calc_function(self.coordinator.data)
-                _LOGGER.debug("Derived sensor '%s' calculated value: %s", self._name, result)
-                return result
-            return super().state
-
-            
-    def battery_watts(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        volts = getattr(telemetry, 'portVoltage', 0.0)
-        amps = getattr(telemetry, 'current', 0.0)
-        return volts * amps
-
-    def remaining_watts(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        volts = getattr(telemetry, 'voltage', 0.0)
-        amps = getattr(telemetry, 'resCap', 0.0)
-        return volts * amps
-
-    def capacity_watts(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        volts = getattr(telemetry, 'voltage', 0.0)
-        amps = getattr(telemetry, 'capacity', 0.0)
-        return volts * amps
-
-    def full_charge_amps(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        remaining = getattr(telemetry, 'resCap', 0.0)
-        capacity = getattr(telemetry, 'capacity', 0.0)
-        return capacity - remaining
-
-    def full_charge_watts(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        voltage = getattr(telemetry, 'voltage', 0.0)
-        resCap = getattr(telemetry, 'resCap', 0.0)
-        capacity = getattr(telemetry, 'capacity', 0.0)
-        remaining_w = voltage * resCap
-        cap_w = voltage * capacity
-        return cap_w - remaining_w
-    
-    def get_cell_extremes_and_difference(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        cell_voltages = getattr(telemetry, f"cellVoltage", 0.0)
-        highest_cell_voltage = max(cell_voltages)
-        lowest_cell_voltage = min(cell_voltages)
-        highest_cell_number = cell_voltages.index(highest_cell_voltage) + 1 
-        lowest_cell_number = cell_voltages.index(lowest_cell_voltage) + 1
-        difference = highest_cell_voltage - lowest_cell_voltage
-        return highest_cell_voltage, lowest_cell_voltage, difference, highest_cell_number, lowest_cell_number
-
-    def highest_cell_voltage(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        return get_cell_extremes_and_difference(data)[0]
-
-    def lowest_cell_voltage(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        return get_cell_extremes_and_difference(data)[1]
-
-    def cell_voltage_difference(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        return get_cell_extremes_and_difference(data)[2]
-
-    def highest_cell_number(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        return get_cell_extremes_and_difference(data)[3]
-
-    def lowest_cell_number(data):
-        telemetry, alarms, battery_address_1, battery_address_2 = data
-        return get_cell_extremes_and_difference(data)[4]
-        
+    # Add the derived sensors
     derived_sensors = [
         DerivedSeplosBMSSensor(coordinator, port, None, "Battery Watts", "W", calc_function=battery_watts, battery_address=battery_address),
         DerivedSeplosBMSSensor(coordinator, port, None, "Remaining Watts", "W", calc_function=remaining_watts, battery_address=battery_address),
@@ -287,7 +239,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         DerivedSeplosBMSSensor(coordinator, port, None, "Cell Number of Lowest Voltage", "", calc_function=lowest_cell_number, battery_address=battery_address)
     ]
 
-    sensors = cell_voltage_sensors + temperature_sensors + cell_alarm_sensors + temp_alarm_sensors + general_sensors + derived_sensors
+    # Combine all sensor lists
+    sensors = all_sensors + derived_sensors
 
     async_add_entities(sensors, True)
 
