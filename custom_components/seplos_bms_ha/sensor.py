@@ -85,12 +85,12 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         prefix = f"sep_bms_ha_{self._battery_address}_" if self._battery_address else "sep_bms_ha_"
         return f"{prefix}{self._name}"
 
+
     @property
     def state(self):
-        """Return the state of the sensor."""
         if not self._attribute:  # Check if attribute is None or empty
             return super().state
-        
+            
         base_attribute = self._attribute.split('[')[0] if '[' in self._attribute else self._attribute
         
         value = None
@@ -106,6 +106,8 @@ class SeplosBMSSensorBase(CoordinatorEntity):
 
         # Interpret the value for alarm sensors
         if base_attribute in ALARM_ATTRIBUTES:
+            if value == '0':
+                return "No Alarm"
             return str(self.interpret_alarm(base_attribute, value))
         
         return value
