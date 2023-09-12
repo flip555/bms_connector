@@ -4,9 +4,6 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 def send_serial_command(command: str, port: str, baudrate: int = 19200, timeout: int = 2) -> str:
-    """
-    Send a serial command and receive the response.
-    """
     with serial.Serial(port, baudrate=baudrate, timeout=timeout) as ser:
         ser.write(command.encode())
         time.sleep(0.5)
@@ -68,10 +65,9 @@ def parse_telemetry_info(info_str):
         cursor += 4
 
     result.current = int(info_str[cursor:cursor+4], 16)
-    # Adjust the current value for integer underflow
-    if result.current > 32767:  # Or another reasonable threshold
-        result.current -= 65536  # Correct the value for a 16-bit integer underflow
-    result.current /= 100  # Convert to the actual value
+    if result.current > 32767:
+        result.current -= 65536 
+    result.current /= 100 
 
     cursor += 4
     result.voltage = int(info_str[cursor:cursor+4], 16) / 100
@@ -149,12 +145,11 @@ def parse_teledata_info(info_str):
     result = Alarms()
     cursor = 4
 
-    # Helper function to check if there are enough characters left
     def remaining_length():
         return len(info_str) - cursor
 
-    # Extracting cellsCount and looping for each cell
     result.cellsCount = int(info_str[cursor:cursor+2], 16)
+
     cursor += 2
     for i in range(result.cellsCount):
         if remaining_length() < 2:
@@ -162,7 +157,6 @@ def parse_teledata_info(info_str):
         result.cellAlarm.append(int(info_str[cursor:cursor+2], 16))
         cursor += 2
 
-    # Extracting tempCount and looping for each temperature alarm
     result.tempCount = int(info_str[cursor:cursor+2], 16)
     cursor += 2
     for i in range(result.tempCount):
@@ -171,7 +165,6 @@ def parse_teledata_info(info_str):
         result.tempAlarm.append(int(info_str[cursor:cursor+2], 16))
         cursor += 2
 
-    # Extracting all remaining fields in the Alarms class. This assumes the order in the class is the same as in the message
     for attribute in ['currentAlarm', 'voltageAlarm', 'customAlarms', 'alarmEvent0', 'alarmEvent1', 'alarmEvent2', 'alarmEvent3', 'alarmEvent4', 'alarmEvent5', 'onOffState', 'equilibriumState0', 'equilibriumState1', 'systemState', 'disconnectionState0', 'disconnectionState1', 'alarmEvent6', 'alarmEvent7']:
         if remaining_length() < 2:
             return result
@@ -187,11 +180,11 @@ def calc_check_sum(s):
 
 def form_battery_id_str(address):
     return format(address, '02x')
-
-def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=True, debug=False):
+    
+def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=True, debug=True):
     if msg.startswith("~"):
         msg = msg[1:]  # remove the tilde at the beginning
-        
+
     check_sum = msg[-4:]
     msg_wo_chk_sum = msg[:-4]
     calculated_check_sum = calc_check_sum(msg_wo_chk_sum)
@@ -210,8 +203,8 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
     
     telemetry_result = None
     teledata_result = None
-    
-    if telemetry_requested:
+
+    if telemetry_requested and not teledata_requested:
         try:
             telemetry_result = parse_telemetry_info(info)
             if telemetry_result is not None and debug:
@@ -219,8 +212,9 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
         except Exception as e:
             if debug:
                 print(f"Telemetry parsing error: {e}")
-        
-    if teledata_requested:
+        _LOGGER.debug("About to return from extract_data_from_message. Telemetry: %s", telemetry_result)
+
+    elif teledata_requested and not telemetry_requested:
         try:
             teledata_result = parse_teledata_info(info)
             if teledata_result is not None and debug:
@@ -228,5 +222,8 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
         except Exception as e:
             if debug:
                 print(f"Teledata parsing error: {e}")
+        _LOGGER.debug("About to return from extract_data_from_message. Teledata: %s", teledata_result)
+        
+    return telemetry_result, teledata_result, address_string
+    
 
-    return telemetry_result, teledata_result
