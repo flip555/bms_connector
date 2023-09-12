@@ -1,61 +1,43 @@
-# Contribution guidelines
+# Contributing Guidelines
 
-Contributing to this project should be as easy and transparent as possible, whether it's:
+Thank you for your interest in contributing to our project! Whether you're reporting bugs, proposing new features, or contributing code, we appreciate your support. Here are some guidelines to follow:
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
+## Git Branch Workflow
 
-## Github is used for everything
+### Main Branch
 
-Github is used to host code, to track issues and feature requests, as well as accept pull requests.
+- **Branch name**: `main`
+- **Purpose**: This branch contains the production-ready code. It should always be stable and deployable.
+- **Maintainer**: flip555
 
-Pull requests are the best way to propose changes to the codebase.
+### Next Branch
 
-1. Fork the repo and create your branch from `main`.
-2. If you've changed something, update the documentation.
-3. Make sure your code lints (using `scripts/lint`).
-4. Test you contribution.
-5. Issue that pull request!
+- **Branch name**: `next-branch`
+- **Purpose**: This is the development or integration branch where new features and fixes are accumulated before being merged into `main`.
+- **Maintainer**: flip555
 
-## Any contributions you make will be under the MIT Software License
+### Feature or Fix Branches
 
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
+- **Branch names**: E.g., `battery-multipacks`
+- **Purpose**: These branches are created for new features or fixes to keep work isolated. They will be merged into `next-branch` once completed.
+- **Maintainer**: Individual contributors
 
-## Report bugs using Github's [issues](../../issues)
+### Workflow Overview
 
-GitHub issues are used to track public bugs.
-Report a bug by [opening a new issue](../../issues/new/choose); it's that easy!
+1. **Creating new branches**: For any new feature or fix, create a new branch.
+2. **Merging into `next-branch`**: Once your work is complete, create a pull request to merge it into `next-branch`.
+3. **Testing**: Before merging changes into `main`, we conduct thorough testing in the `next-branch`.
+4. **Merging into `main`**: After ensuring stability, changes from `next-branch` are merged into `main`.
+5. **Releasing**: Following a successful merge into `main`, tag the commit with a version number to indicate a new release.
+6. **Reset `next-branch`**: Post-release, reset `next-branch` to the current state of `main` to begin the next development cycle.
 
-## Write bug reports with detail, background, and sample code
+## Getting Help
 
-**Great Bug Reports** tend to have:
+Feel free to use resources like ChatGPT to assist you, even if you are a novice coder. We are here to foster a collaborative and inclusive environment.
 
-- A quick summary and/or background
-- Steps to reproduce
-  - Be specific!
-  - Give sample code if you can.
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
+## Reporting Issues
 
-People *love* thorough bug reports. I'm not even kidding.
+When reporting issues, please be as descriptive as possible. Provide the steps to reproduce the issue, expected outcome, and actual results.
 
-## Use a Consistent Coding Style
+Thank you for your collaboration and contribution!
 
-Use [black](https://github.com/ambv/black) to make sure the code follows the style.
-
-## Test your code modification
-
-This custom component is based on [integration_blueprint template](https://github.com/ludeeus/integration_blueprint).
-
-It comes with development environment in a container, easy to launch
-if you use Visual Studio Code. With this container you will have a stand alone
-Home Assistant instance running and already configured with the included
-[`configuration.yaml`](./config/configuration.yaml)
-file.
-
-## License
-
-By contributing, you agree that your contributions will be licensed under its MIT License.

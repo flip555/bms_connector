@@ -1,7 +1,7 @@
 """Custom integration to integrate Seplos BMS with Home Assistant.
 
 For more details about this integration, please refer to
-https://github.com/your_github_username/seplos_bms_ha
+https://github.com/flip555/seplos_bms_ha
 """
 from __future__ import annotations
 
