@@ -1,8 +1,8 @@
-import time
 import logging
 from .serial_comms import send_serial_command
 from .telemetry import Telemetry, parse_telemetry_info
 from .alarms_teledata import Alarms, parse_teledata_info
+
 _LOGGER = logging.getLogger(__name__)
 
 def calc_check_sum(s):
@@ -57,5 +57,3 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
         _LOGGER.debug("About to return from extract_data_from_message. Teledata: %s", teledata_result)
         
     return telemetry_result, teledata_result, address_string
-    
-
