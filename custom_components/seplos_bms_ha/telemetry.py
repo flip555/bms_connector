@@ -55,6 +55,9 @@ def parse_telemetry_info(info_str):
     if result.current > 32767:
         result.current -= 65536 
     result.current /= 100 
+    
+    # fix current to 0.00 to test making sure its not reported as "unknown" in HA
+    #result.current = "0.00"
 
     cursor += 4
     result.voltage = int(info_str[cursor:cursor+4], 16) / 100

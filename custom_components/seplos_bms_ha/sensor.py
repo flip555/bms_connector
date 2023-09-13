@@ -88,29 +88,60 @@ class SeplosBMSSensorBase(CoordinatorEntity):
 
     @property
     def state(self):
+        """Return the state of the sensor."""
         if not self._attribute:  # Check if attribute is None or empty
             return super().state
-            
+
         base_attribute = self._attribute.split('[')[0] if '[' in self._attribute else self._attribute
-        
+
         value = None
         if isinstance(self.coordinator.data, tuple):
             telemetry_data, alarms_data, battery_address_1_data, battery_address_2_data = self.coordinator.data
             value = self.get_value(telemetry_data) or self.get_value(alarms_data)
         else:
             value = self.get_value(self.coordinator.data)
-        
+
         if value is None or value == '':
             _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
             return None
 
+        # Handle the "Current" sensor specifically
+        if base_attribute == "current":
+            _LOGGER.debug("Current Selected: %s", value)
+
+            try:
+                # Check if value is None or an empty string
+                if value is None or value == '':
+                    _LOGGER.debug("Value is None or empty string")
+                    return "0"
+
+                # Attempt to convert the value to a float
+                float_value = float(value)
+
+                # Check if the float value is close to zero (e.g., within 0.01)
+                if abs(float_value) < 0.01:
+                    _LOGGER.debug("Float value is very close to zero: %s", float_value)
+                    return "0"
+                elif float_value == 0.0:
+                    _LOGGER.debug("Float value is exactly zero: %s", float_value)
+                    return "0"
+                else:
+                    _LOGGER.debug("Float value is not zero: %s", float_value)
+                    return str(float_value)
+            except ValueError:
+                _LOGGER.debug("Error converting value to float")
+                pass  # If conversion to float fails, continue as before
+
         # Interpret the value for alarm sensors
         if base_attribute in ALARM_ATTRIBUTES:
-            if value == '0':
-                return "No Alarm"
             return str(self.interpret_alarm(base_attribute, value))
-        
+
         return value
+
+
+
+
+
 
     @property
     def unit_of_measurement(self):
