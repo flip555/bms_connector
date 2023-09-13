@@ -103,7 +103,7 @@ class SeplosBMSSensorBase(CoordinatorEntity):
 
         if value is None or value == '':
             if base_attribute == 'current':
-                _LOGGER.warning("Current seems to be None, setting to 0.00 to fix HA reporting as unknown")
+                _LOGGER.debug("Current seems to be None, setting to 0.00 to fix HA reporting as unknown")
                 return 0.00
             else:
                 _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
