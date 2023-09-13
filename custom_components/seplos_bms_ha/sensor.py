@@ -102,45 +102,21 @@ class SeplosBMSSensorBase(CoordinatorEntity):
             value = self.get_value(self.coordinator.data)
 
         if value is None or value == '':
-            _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
-            return None
-
-        # Handle the "Current" sensor specifically
-        if base_attribute == "current":
-            _LOGGER.debug("Current Selected: %s", value)
-
-            try:
-                # Check if value is None or an empty string
-                if value is None or value == '':
-                    _LOGGER.debug("Value is None or empty string")
-                    return "0"
-
-                # Attempt to convert the value to a float
-                float_value = float(value)
-
-                # Check if the float value is close to zero (e.g., within 0.01)
-                if abs(float_value) < 0.01:
-                    _LOGGER.debug("Float value is very close to zero: %s", float_value)
-                    return "0"
-                elif float_value == 0.0:
-                    _LOGGER.debug("Float value is exactly zero: %s", float_value)
-                    return "0"
-                else:
-                    _LOGGER.debug("Float value is not zero: %s", float_value)
-                    return str(float_value)
-            except ValueError:
-                _LOGGER.debug("Error converting value to float")
-                pass  # If conversion to float fails, continue as before
-
+            if base_attribute == 'current':
+                _LOGGER.warning("Current seems to be None, setting to 0.00 to fix HA reporting as unknown")
+                return 0.00
+            else:
+                _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
+                return None
+                
         # Interpret the value for alarm sensors
         if base_attribute in ALARM_ATTRIBUTES:
-            return str(self.interpret_alarm(base_attribute, value))
+            interpreted_value = str(self.interpret_alarm(base_attribute, value))
+            _LOGGER.debug("Interpreted value for %s: %s", base_attribute, interpreted_value)
+            return interpreted_value
 
+        _LOGGER.debug("Sensor state for %s: %s", self._name, value)
         return value
-
-
-
-
 
 
     @property

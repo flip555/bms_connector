@@ -2,7 +2,10 @@ def battery_watts(data):
     telemetry, alarms, battery_address_1, battery_address_2 = data
     volts = getattr(telemetry, 'portVoltage', 0.0)
     amps = getattr(telemetry, 'current', 0.0)
-    return volts * amps
+    if isinstance(volts, (float, int)) and isinstance(amps, (float, int)):
+        return volts * amps
+    return 0.0  # Handle the case when volts or amps are not numeric values
+
 
 def remaining_watts(data):
     telemetry, alarms, battery_address_1, battery_address_2 = data
