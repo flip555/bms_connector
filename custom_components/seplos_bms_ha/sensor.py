@@ -88,29 +88,36 @@ class SeplosBMSSensorBase(CoordinatorEntity):
 
     @property
     def state(self):
+        """Return the state of the sensor."""
         if not self._attribute:  # Check if attribute is None or empty
             return super().state
-            
+
         base_attribute = self._attribute.split('[')[0] if '[' in self._attribute else self._attribute
-        
+
         value = None
         if isinstance(self.coordinator.data, tuple):
             telemetry_data, alarms_data, battery_address_1_data, battery_address_2_data = self.coordinator.data
             value = self.get_value(telemetry_data) or self.get_value(alarms_data)
         else:
             value = self.get_value(self.coordinator.data)
-        
-        if value is None or value == '':
-            _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
-            return None
 
+        if value is None or value == '':
+            if base_attribute == 'current':
+                _LOGGER.debug("Current seems to be None, setting to 0.00 to fix HA reporting as unknown")
+                return 0.00
+            else:
+                _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
+                return None
+                
         # Interpret the value for alarm sensors
         if base_attribute in ALARM_ATTRIBUTES:
-            if value == '0':
-                return "No Alarm"
-            return str(self.interpret_alarm(base_attribute, value))
-        
+            interpreted_value = str(self.interpret_alarm(base_attribute, value))
+            _LOGGER.debug("Interpreted value for %s: %s", base_attribute, interpreted_value)
+            return interpreted_value
+
+        _LOGGER.debug("Sensor state for %s: %s", self._name, value)
         return value
+
 
     @property
     def unit_of_measurement(self):
