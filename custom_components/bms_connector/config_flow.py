@@ -55,7 +55,7 @@ class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_sensor_prefix(self, user_input=None):
         if user_input is not None:
             # Store user input and transition to the additional config step
-            title = f"{self.user_input['bms_type']} - {self.user_input['sensor_prefix']}"
+            title = f"{self.user_input['bms_type']} - {self.user_input['connector_port']}"
             return self.async_create_entry(title=title, data=self.user_input)
 
         data_schema = vol.Schema({
