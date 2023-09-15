@@ -1,12 +1,6 @@
 import voluptuous as vol
 from homeassistant import config_entries
-from .const import DOMAIN
-
-# Define the options for BMS Type and Connector Port
-BMS_TYPES = {
-    "SEPLV2": "SEP BMS V2 (SEPLV2)",
-    "SEPLV3": "SEP BMS V3 (SEPLV3)",
-}
+from .const import DOMAIN, BMS_TYPES
 
 class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
