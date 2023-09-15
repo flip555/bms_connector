@@ -1,17 +1,22 @@
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .serial_comms import send_serial_command
+from ....connector.local_serial.local_serial import send_serial_command
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import async_generate_entity_id
+from homeassistant.helpers.entity_component import EntityComponent
+
 from .seplos_helper import extract_data_from_message
 import asyncio
 import logging
 from datetime import timedelta
-from .const import (
-    LOGGER,
+from ....const import (
     NAME,
     DOMAIN,
     VERSION,
     ATTRIBUTION,
+)
+from .const import (
     ALARM_ATTRIBUTES,
     ALARM_MAPPINGS
 )
@@ -40,107 +45,12 @@ _LOGGER = logging.getLogger(__name__)
 COMMAND_1 = "~20004642E00200FD37\r"
 COMMAND_2 = "~20004644E00200FD35\r"
 
-class SeplosBMSSensorBase(CoordinatorEntity):
-    def interpret_alarm(self, event, value):
-        flags = ALARM_MAPPINGS.get(event, [])
 
-        if not flags:
-            return f"Unknown event: {event}"
+# Define the generate_sensors function
+# .bms.seplos.v2.sensors module
 
-        # Special handling for temperatureAlarm
-        if event.startswith("tempAlarm"):
-            return ALARM_MAPPINGS["tempAlarm"].get(value, "Unknown value")
- 
-        # Special handling for cellAlarm
-        if event.startswith("cellAlarm"):
-            return ALARM_MAPPINGS["cellAlarm"].get(value, "Unknown value")
-
-        if event == "alarmEvent0":
-            return flags[value] if 0 <= value < len(flags) else "Unknown value"
-
-        # For other alarm events, interpret them as bit flags
-        triggered_alarms = [flag for idx, flag in enumerate(flags) if value & (1 << idx)]
-
-        return ', '.join(triggered_alarms) if triggered_alarms else "No Alarm"
-   
-    def __init__(self, coordinator, port, attribute, name, unit=None, icon=None, battery_address=None):
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._port = port
-        self._attribute = attribute
-        self._name = name
-        self._unit = unit
-        self._icon = icon
-        self._battery_address = battery_address
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        prefix = f"Seplos BMS HA {self._battery_address} -" if self._battery_address else "Seplos BMS HA -"
-        return f"{prefix} {self._name}"
-        
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        prefix = f"sep_bms_ha_{self._battery_address}_" if self._battery_address else "sep_bms_ha_"
-        return f"{prefix}{self._name}"
-
-
-    @property
-    def state(self):
-        if not self._attribute:  # Check if attribute is None or empty
-            return super().state
-            
-        base_attribute = self._attribute.split('[')[0] if '[' in self._attribute else self._attribute
-        
-        value = None
-        if isinstance(self.coordinator.data, tuple):
-            telemetry_data, alarms_data, battery_address_1_data, battery_address_2_data = self.coordinator.data
-            value = self.get_value(telemetry_data) or self.get_value(alarms_data)
-        else:
-            value = self.get_value(self.coordinator.data)
-        
-        if value is None or value == '':
-            _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
-            return None
-
-        # Interpret the value for alarm sensors
-        if base_attribute in ALARM_ATTRIBUTES:
-            if value == '0':
-                return "No Alarm"
-            return str(self.interpret_alarm(base_attribute, value))
-        
-        return value
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        if self._attribute in ALARM_ATTRIBUTES:
-            return None  # No unit for alarms
-        return self._unit
-
-    def get_value(self, telemetry_data):
-        """Retrieve the value based on the attribute."""
-        # If the attribute name contains a bracket, it's trying to access a list
-        if '[' in self._attribute and ']' in self._attribute:
-            attr, index = self._attribute.split('[')
-            index = int(index.rstrip(']'))
-            # Check if the attribute exists in telemetry_data
-            if hasattr(telemetry_data, attr):
-                list_data = getattr(telemetry_data, attr)
-                if index < len(list_data):
-                    value = list_data[index]
-                    return value
-        else:
-            value = getattr(telemetry_data, self._attribute, None)
-            return value
-
-    @property
-    def icon(self):
-        """Return the icon of the sensor."""
-        return self._icon
-
-async def async_setup_entry(hass, entry, async_add_entities):
+# Define the generate_sensors function
+async def generate_sensors(hass, bms_type, port, battery_address, sensor_prefix, entry, async_add_entities):
     class DerivedSeplosBMSSensor(SeplosBMSSensorBase):
         def __init__(self, *args, **kwargs):
             self._calc_function = kwargs.pop("calc_function", None)
@@ -154,16 +64,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 return result
             return super().state
             
-    port = entry.data.get("usb_port")  # Get port from the config entry
+
 
     async def async_update_data():
+        _LOGGER.debug("update data generate_sensors called")
+
         # Loop for multiple battery packs should start here using TELEMETRY_COMMANDS from const.py 0-15 as COMMAND_1
         telemetry_data_str = await hass.async_add_executor_job(send_serial_command, COMMAND_1, port)
-        telemetry, _, battery_address_1 = extract_data_from_message(telemetry_data_str, True, False, True)
+        telemetry, battery_address_1 = extract_data_from_message(telemetry_data_str, True, False, True)
+        _LOGGER.debug("update data generate_sensors cal2led")
 
         # Loop for multiple battery packs should use TELEDATA_CODES from const.py 0-15 as COMMAND_2
         teledata_data_str = await hass.async_add_executor_job(send_serial_command, COMMAND_2, port)
-        _, alarms, battery_address_2 = extract_data_from_message(teledata_data_str, False, True, True)
+        alarms, battery_address_2 = extract_data_from_message(teledata_data_str, False, True, True)
+        _LOGGER.debug("update data generate_sensors 2called")
 
         return telemetry, alarms, battery_address_1, battery_address_2
 
@@ -176,7 +90,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         update_method=async_update_data,
         update_interval=timedelta(seconds=5),  # Define how often to fetch data
     )
-
+    _LOGGER.debug("async_refresh data generate_sensors called")
     await coordinator.async_refresh() 
 
     all_sensors = (
@@ -235,3 +149,113 @@ async def async_setup_entry(hass, entry, async_add_entities):
     sensors = all_sensors + derived_sensors
 
     async_add_entities(sensors, True)
+
+
+
+    
+class SeplosBMSSensorBase(CoordinatorEntity):
+    def interpret_alarm(self, event, value):
+        flags = ALARM_MAPPINGS.get(event, [])
+
+        if not flags:
+            return f"Unknown event: {event}"
+
+        # Special handling for temperatureAlarm
+        if event.startswith("tempAlarm"):
+            return ALARM_MAPPINGS["tempAlarm"].get(value, "Unknown value")
+ 
+        # Special handling for cellAlarm
+        if event.startswith("cellAlarm"):
+            return ALARM_MAPPINGS["cellAlarm"].get(value, "Unknown value")
+
+        if event == "alarmEvent0":
+            return flags[value] if 0 <= value < len(flags) else "Unknown value"
+
+        # For other alarm events, interpret them as bit flags
+        triggered_alarms = [flag for idx, flag in enumerate(flags) if value & (1 << idx)]
+
+        return ', '.join(triggered_alarms) if triggered_alarms else "No Alarm"
+   
+    def __init__(self, coordinator, port, attribute, name, unit=None, icon=None, battery_address=None):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._port = port
+        self._attribute = attribute
+        self._name = name
+        self._unit = unit
+        self._icon = icon
+        self._battery_address = battery_address
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        prefix = f"Seplos BMS HA {self._battery_address} -" if self._battery_address else "Seplos BMS HA -"
+        return f"{prefix} {self._name}"
+        
+    @property
+    def unique_id(self):
+        """Return a unique ID for this entity."""
+        prefix = f"sep_bms_ha_{self._battery_address}_" if self._battery_address else "sep_bms_ha_"
+        return f"{prefix}{self._name}"
+
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        if not self._attribute:  # Check if attribute is None or empty
+            return super().state
+
+        base_attribute = self._attribute.split('[')[0] if '[' in self._attribute else self._attribute
+
+        value = None
+        if isinstance(self.coordinator.data, tuple):
+            telemetry_data, alarms_data, battery_address_1_data, battery_address_2_data = self.coordinator.data
+            value = self.get_value(telemetry_data) or self.get_value(alarms_data)
+        else:
+            value = self.get_value(self.coordinator.data)
+
+        if value is None or value == '':
+            if base_attribute == 'current':
+                _LOGGER.debug("Current seems to be None, setting to 0.00 to fix HA reporting as unknown")
+                return 0.00
+            else:
+                _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
+                return None
+                
+        # Interpret the value for alarm sensors
+        if base_attribute in ALARM_ATTRIBUTES:
+            interpreted_value = str(self.interpret_alarm(base_attribute, value))
+            _LOGGER.debug("Interpreted value for %s: %s", base_attribute, interpreted_value)
+            return interpreted_value
+
+        _LOGGER.debug("Sensor state for %s: %s", self._name, value)
+        return value
+
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement."""
+        if self._attribute in ALARM_ATTRIBUTES:
+            return None  # No unit for alarms
+        return self._unit
+
+    def get_value(self, telemetry_data):
+        """Retrieve the value based on the attribute."""
+        # If the attribute name contains a bracket, it's trying to access a list
+        if '[' in self._attribute and ']' in self._attribute:
+            attr, index = self._attribute.split('[')
+            index = int(index.rstrip(']'))
+            # Check if the attribute exists in telemetry_data
+            if hasattr(telemetry_data, attr):
+                list_data = getattr(telemetry_data, attr)
+                if index < len(list_data):
+                    value = list_data[index]
+                    return value
+        else:
+            value = getattr(telemetry_data, self._attribute, None)
+            return value
+
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return self._icon

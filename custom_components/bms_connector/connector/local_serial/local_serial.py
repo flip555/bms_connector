@@ -8,4 +8,5 @@ def send_serial_command(command: str, port: str, baudrate: int = 19200, timeout:
     with serial.Serial(port, baudrate=baudrate, timeout=timeout) as ser:
         ser.write(command.encode())
         time.sleep(0.5)
-        return ser.read(ser.in_waiting).decode().replace('\r', '').replace('\n', '')
+        response = ser.read(ser.in_waiting).decode().replace('\r', '').replace('\n', '')
+        return response

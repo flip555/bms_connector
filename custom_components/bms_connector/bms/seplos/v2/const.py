@@ -1,14 +1,3 @@
-"""Constants for Seplos BMS."""
-from logging import Logger, getLogger
-
-LOGGER: Logger = getLogger(__package__)
-
-# Basic Information
-NAME = "Seplos BMS"
-DOMAIN = "seplos_bms_ha"
-VERSION = "1.0.0"
-ATTRIBUTION = "Integration for Seplos BMS via serial communication and soon ESPHome Device."
-
 # Telemetry Commands Packs 00-15
 TELEMETRY_COMMANDS = {
     0: "~20004642E00200FD37\r",

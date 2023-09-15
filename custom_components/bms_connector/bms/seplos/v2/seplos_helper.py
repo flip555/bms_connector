@@ -1,5 +1,4 @@
 import logging
-from .serial_comms import send_serial_command
 from .telemetry import Telemetry, parse_telemetry_info
 from .alarms_teledata import Alarms, parse_teledata_info
 
@@ -12,7 +11,7 @@ def calc_check_sum(s):
 
 def form_battery_id_str(address):
     return format(address, '02x')
-    
+
 def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=True, debug=True):
     if msg.startswith("~"):
         msg = msg[1:]  # remove the tilde at the beginning
@@ -20,40 +19,40 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
     check_sum = msg[-4:]
     msg_wo_chk_sum = msg[:-4]
     calculated_check_sum = calc_check_sum(msg_wo_chk_sum)
-    
     if debug:
-        print(calculated_check_sum)
-        
+        _LOGGER.debug("Calculated Checksum: %s", calculated_check_sum)
+
     if check_sum != calculated_check_sum:
         if debug:
-            print("Checksum mismatch!")
+            _LOGGER.debug("Checksum mismatch!")
         return None, None
 
     address = int(msg_wo_chk_sum[2:4], 16)
     address_string = '0x' + form_battery_id_str(address)
     info = msg_wo_chk_sum[12:]
-    
+
     telemetry_result = None
     teledata_result = None
 
     if telemetry_requested and not teledata_requested:
         try:
-            telemetry_result = parse_telemetry_info(info)
-            if telemetry_result is not None and debug:
-                print(address_string, telemetry_result.__dict__)
+            processed_data = parse_telemetry_info(info)
+            if processed_data is not None and debug:
+                _LOGGER.debug("Telemetry Result for %s: %s", address_string, processed_data.__dict__)
         except Exception as e:
             if debug:
-                print(f"Telemetry parsing error: {e}")
-        _LOGGER.debug("About to return from extract_data_from_message. Telemetry: %s", telemetry_result)
+                _LOGGER.debug("Telemetry parsing error: %s", e)
+        _LOGGER.debug("About to return from extract_data_from_message. Telemetry: %s", processed_data)
 
     elif teledata_requested and not telemetry_requested:
         try:
-            teledata_result = parse_teledata_info(info)
-            if teledata_result is not None and debug:
-                print(address_string, teledata_result.__dict__)
+            processed_data = parse_teledata_info(info)
+            if processed_data is not None and debug:
+                _LOGGER.debug("Teledata Result for %s: %s", address_string, processed_data.__dict__)
         except Exception as e:
             if debug:
-                print(f"Teledata parsing error: {e}")
-        _LOGGER.debug("About to return from extract_data_from_message. Teledata: %s", teledata_result)
-        
-    return telemetry_result, teledata_result, address_string
+                _LOGGER.debug("Teledata parsing error: %s", e)
+        _LOGGER.debug("About to return from extract_data_from_message. Teledata: %s", processed_data)
+
+    return processed_data, address_string
+
