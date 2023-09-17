@@ -11,7 +11,7 @@ from homeassistant import config_entries  # Add this import
 ############## BMS Routing Imports ##############
 #################################################
 from .bms.seplos.v2.sensors import generate_sensors as SEPLOS_V2_START
-#from .bms.seplos.v3.sensors import generate_sensors as SEPLOS_V3_START
+from .bms.seplos.v3.sensors import generate_sensors as SEPLOS_V3_START
 
 _LOGGER = logging.getLogger(__name__)
 coordinator = None  # Define coordinator at a higher scope
@@ -44,7 +44,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: config_entrie
         # For SEPLV3 BMS's
         elif bms_type == "SEPLV3":
             _LOGGER.debug("%s selected. Routing now..", bms_type)
-            #await SEPLOS_V3_START(hass, bms_type, port, battery_address, sensor_prefix, entry, async_add_entities)
+            await SEPLOS_V3_START(hass, bms_type, port, battery_address, sensor_prefix, entry, async_add_entities)
 
         else:
             _LOGGER.error("Unsupported BMS type")
