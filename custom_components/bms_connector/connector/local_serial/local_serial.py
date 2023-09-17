@@ -1,23 +1,19 @@
 import serial
 import logging
-
+import time
 _LOGGER = logging.getLogger(__name__)
 
-def send_serial_commands(commands, port, baudrate=19200, timeout=2):
+def send_serial_command(commands, port, baudrate=19200, timeout=2):
     responses = []
+    _LOGGER.debug(commands)
 
     with serial.Serial(port, baudrate=baudrate, timeout=timeout) as ser:
         for command in commands:
+            _LOGGER.debug(command)
             ser.write(command.encode())
-            response = ''
-            while True:
-                char = ser.read(1).decode()
-                if char == '\n' or ser.timeout:
-                    break
-                response += char
-            _LOGGER.debug("Response:")
-            _LOGGER.debug(response)
-            responses.append(response)
+            time.sleep(0.5)
+            responses.append(ser.read(ser.in_waiting).decode().replace('\r', '').replace('\n', ''))
+    _LOGGER.debug(responses)
 
     return responses
 

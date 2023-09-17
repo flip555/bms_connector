@@ -6,7 +6,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
-from .seplos_helper import extract_data_from_message
+from .data_parser import extract_data_from_message
 import asyncio
 import logging
 from datetime import timedelta
@@ -18,9 +18,11 @@ from ....const import (
 )
 from .const import (
     ALARM_ATTRIBUTES,
-    ALARM_MAPPINGS
+    ALARM_MAPPINGS,
+    SYSTEM_ATTRIBUTES,
+    SETTINGS_ATTRIBUTES,
 )
-from .v2_calc_functions import (
+from .calc_functions import (
     battery_watts,
     remaining_watts,
     capacity_watts,
@@ -67,21 +69,15 @@ async def generate_sensors(hass, bms_type, port, battery_address, sensor_prefix,
 
 
     async def async_update_data():
-        _LOGGER.debug("update data generate_sensors called")
+        commands = ["~20004642E00200FD37\r", "~20004644E00200FD35\r", "~20004647E00200FD32\r", "~20004651E00200FD37\r"]
 
         # Loop for multiple battery packs should start here using TELEMETRY_COMMANDS from const.py 0-15 as COMMAND_1
-        telemetry_data_str = await hass.async_add_executor_job(send_serial_command, COMMAND_1, port)
-        telemetry, battery_address_1 = extract_data_from_message(telemetry_data_str, True, False, True)
-        _LOGGER.debug("update data generate_sensors cal2led")
+        telemetry_data_str = await hass.async_add_executor_job(send_serial_command, commands, port)
+        battery_address, telemetry, alarms, system_details, protection_settings = extract_data_from_message(telemetry_data_str, True, True, True)
 
-        # Loop for multiple battery packs should use TELEDATA_CODES from const.py 0-15 as COMMAND_2
-        teledata_data_str = await hass.async_add_executor_job(send_serial_command, COMMAND_2, port)
-        alarms, battery_address_2 = extract_data_from_message(teledata_data_str, False, True, True)
-        _LOGGER.debug("update data generate_sensors 2called")
+        return battery_address, telemetry, alarms, system_details, protection_settings
 
-        return telemetry, alarms, battery_address_1, battery_address_2
-
-    telemetry, alarms, battery_address, battery_address_2 = await async_update_data()
+    battery_address, telemetry, alarms, system_details, protection_settings = await async_update_data()
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -128,8 +124,110 @@ async def generate_sensors(hass, bms_type, port, battery_address, sensor_prefix,
             SeplosBMSSensorBase(coordinator, port, "systemState", "System State", "", battery_address=battery_address),
             SeplosBMSSensorBase(coordinator, port, "disconnectionState0", "Disconnection State 0", "", battery_address=battery_address),
             SeplosBMSSensorBase(coordinator, port, "disconnectionState1", "Disconnection State 1", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "device_name", "BMS Name", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "software_version", "BMS Software Version", "", battery_address=battery_address),
+            SeplosBMSSensorBase(coordinator, port, "manufacturer_name", "Inverter Manufacturer", "", battery_address=battery_address),
+
         ]
     )
+    setting_sensors = [
+        SeplosBMSSensorBase(coordinator, port, "overcurrent_delay_recovery", "Overcurrent Delay Recovery", "s", "mdi:timer-sand", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "total_voltage_overvoltage_protection", "Total Voltage Overvoltage Protection", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "equalization_opening_voltage", "Equalization Opening Voltage", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "monomer_undervoltage_recovery", "Monomer Undervoltage Recovery", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "monomer_low_pressure_recovery", "Monomer Low Pressure Recovery", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "monomer_overvoltage_protection", "Monomer Overvoltage Protection", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "monomer_overvoltage_recovery", "Monomer Overvoltage Recovery", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "monomer_undervoltage_protection", "Monomer Undervoltage Protection", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "monomer_low_pressure_alarm", "Monomer Low Pressure Alarm", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "monomer_high_pressure_recovery", "Monomer High Pressure Recovery", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "battery_low_voltage_forbidden_charging", "Battery Low Voltage Forbidden Charging", "mV", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "total_pressure_high_pressure_alarm", "Total Pressure High Pressure Alarm", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "total_pressure_and_high_pressure_recovery", "Total Pressure and High Pressure Recovery", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "total_pressure_low_pressure_alarm", "Total Pressure Low Pressure Alarm", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "total_pressure_and_low_pressure_recovery", "Total Pressure and Low Pressure Recovery", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "total_voltage_overvoltage_protection", "Total Voltage Overvoltage Protection", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "total_pressure_overpressure_recovery", "Total Pressure Overpressure Recovery", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "total_voltage_undervoltage_protection", "Total Voltage Undervoltage Protection", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "total_pressure_undervoltage_recovery", "Total Pressure Undervoltage Recovery", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_overvoltage_protection", "Charging Overvoltage Protection", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_overvoltage_recovery", "Charging Overvoltage Recovery", "V", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_high_temperature_warning", "Charging High Temperature Warning", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_high_temperature_recovery", "Charging High Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_low_temperature_warning", "Charging Low Temperature Warning", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_low_temperature_recovery", "Charging Low Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_over_temperature_protection", "Charging Over Temperature Protection", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_over_temperature_recovery", "Charging Over Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_under_temperature_protection", "Charging Under Temperature Protection", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_under_temperature_recovery", "Charging Under Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_high_temperature_warning", "Discharge High Temperature Warning", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_high_temperature_recovery", "Discharge High Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_low_temperature_warning", "Discharge Low Temperature Warning", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_low_temperature_recovery", "Discharge Low Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_over_temperature_protection", "Discharge Over Temperature Protection", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_over_temperature_recovery", "Discharge Over Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_under_temperature_protection", "Discharge Under Temperature Protection", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_under_temperature_recovery", "Discharge Under Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "cell_low_temperature_heating", "Cell Low Temperature Heating", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "cell_heating_recovery", "Cell Heating Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "ambient_high_temperature_alarm", "Ambient High Temperature Alarm", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "ambient_high_temperature_recovery", "Ambient High Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "ambient_low_temperature_warning", "Ambient Low Temperature Warning", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "ambient_low_temperature_recovery", "Ambient Low Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "fan_fault", "Fan Fault", "When", "mdi:fan", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "fan_fault_recovery", "Fan Fault Recovery", "When", "mdi:fan", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "can_communication_fault", "CAN Communication Fault", "When", "mdi:network", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "can_communication_fault_recovery", "CAN Communication Fault Recovery", "When", "mdi:network", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "mos_short_circuit_protection", "MOS Short Circuit Protection", "When", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "mos_short_circuit_protection_recovery", "MOS Short Circuit Protection Recovery", "When", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "power_high_temperature_recovery", "Power High Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "power_over_temperature_protection", "Power Over Temperature Protection", "°C", "mdi:thermometer-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "power_over_temperature_recovery", "Power Over Temperature Recovery", "°C", "mdi:thermometer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_overcurrent_warning", "Charging Overcurrent Warning", "A", "mdi:current-ac", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_overcurrent_recovery", "Charging Overcurrent Recovery", "A", "mdi:current-ac", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_overcurrent_warning", "Discharge Overcurrent Warning", "A", "mdi:current-dc", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_overcurrent_recovery", "Discharge Overcurrent Recovery", "A", "mdi:current-dc", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charge_overcurrent_protection", "Charge Overcurrent Protection", "A", "mdi:current-ac", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_overcurrent_protection", "Discharge Overcurrent Protection", "A", "mdi:current-dc", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "transient_overcurrent_protection", "Transient Overcurrent Protection", "A", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "output_soft_start_delay", "Output Soft Start Delay", "ms", "mdi:timer-sand", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "battery_rated_capacity", "Battery Rated Capacity", "Ah", "mdi:flash-circle", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "soc", "SOC", "Ah", "mdi:gauge", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "cell_invalidation_differential_pressure", "Cell Invalidation Differential Pressure", "V", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "cell_invalidation_recovery", "Cell Invalidation Recovery", "V", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "equalization_opening_pressure_difference", "Equalization Opening Pressure Difference", "V", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "equalization_closing_pressure_difference", "Equalization Closing Pressure Difference", "V", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "static_equilibrium_time", "Static Equilibrium Time", "When", "mdi:timer-sand", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "battery_number_in_series", "Battery Number in Series", "String", "mdi:battery", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charge_overcurrent_delay", "Charge Overcurrent Delay", "S", "mdi:timer-sand", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "discharge_overcurrent_delay", "Discharge Overcurrent Delay", "S", "mdi:timer-sand", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "transient_overcurrent_delay", "Transient Overcurrent Delay", "ms", "mdi:timer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "overcurrent_delay_recovery_times", "Overcurrent Delay Recovery Times", "times", "mdi:timer-sand", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charge_current_limit_delay", "Charge Current Limit Delay", "Minutes", "mdi:timer-sand", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charge_activation_delay", "Charge Activation Delay", "Minutes", "mdi:timer-sand", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charging_activation_interval", "Charging Activation Interval", "When", "mdi:timer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "charge_activation_times", "Charge Activation Times", "times", "mdi:timer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "work_record_interval", "Work Record Interval", "Minutes", "mdi:timer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "standby_recording_interval", "Standby Recording Interval", "Minutes", "mdi:timer", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "standby_shutdown_delay", "Standby Shutdown Delay", "When", "mdi:timer-sand", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "remaining_capacity_alarm", "Remaining Capacity Alarm", "%", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "remaining_capacity_protection", "Remaining Capacity Protection", "%", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "interval_charge_capacity", "Interval Charge Capacity", "%", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "cycle_cumulative_capacity", "Cycle Cumulative Capacity", "%", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "connection_fault_impedance", "Connection Fault Impedance", "mΩ", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "compensation_point_1_position", "Compensation Point 1 Position", "String", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "compensation_point_1_impedance", "Compensation Point 1 Impedance", "mΩ", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "compensation_point_2_position", "Compensation Point 2 Position", "String", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "compensation_point_2_impedance", "Compensation Point 2 Impedance", "mΩ", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "compensation_point_3_position", "Compensation Point 3 Position", "String", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "compensation_point_3_impedance", "Compensation Point 3 Impedance", "mΩ", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "compensation_point_4_position", "Compensation Point 4 Position", "String", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "compensation_point_4_impedance", "Compensation Point 4 Impedance", "mΩ", "mdi:flash-alert", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "working_status", "Working Status", "When", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "status_information", "Status Information", "When", "mdi:flash", battery_address=battery_address),
+        SeplosBMSSensorBase(coordinator, port, "equipment_version", "Equipment Version", "Version", "mdi:information-outline", battery_address=battery_address),
+    ]
+
 
     # Add the derived sensors
     derived_sensors = [
@@ -146,13 +244,10 @@ async def generate_sensors(hass, bms_type, port, battery_address, sensor_prefix,
     ]
 
     # Combine all sensor lists
-    sensors = all_sensors + derived_sensors
+    sensors = all_sensors + derived_sensors + setting_sensors
 
     async_add_entities(sensors, True)
 
-
-
-    
 class SeplosBMSSensorBase(CoordinatorEntity):
     def interpret_alarm(self, event, value):
         flags = ALARM_MAPPINGS.get(event, [])
@@ -160,20 +255,8 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         if not flags:
             return f"Unknown event: {event}"
 
-        # Special handling for temperatureAlarm
-        if event.startswith("tempAlarm"):
-            return ALARM_MAPPINGS["tempAlarm"].get(value, "Unknown value")
- 
-        # Special handling for cellAlarm
-        if event.startswith("cellAlarm"):
-            return ALARM_MAPPINGS["cellAlarm"].get(value, "Unknown value")
-
-        if event == "alarmEvent0":
-            return flags[value] if 0 <= value < len(flags) else "Unknown value"
-
         # For other alarm events, interpret them as bit flags
-        triggered_alarms = [flag for idx, flag in enumerate(flags) if value & (1 << idx)]
-
+        triggered_alarms = [flag for idx, flag in enumerate(flags) if value is not None and value & (1 << idx)]
         return ', '.join(triggered_alarms) if triggered_alarms else "No Alarm"
    
     def __init__(self, coordinator, port, attribute, name, unit=None, icon=None, battery_address=None):
@@ -209,11 +292,16 @@ class SeplosBMSSensorBase(CoordinatorEntity):
 
         value = None
         if isinstance(self.coordinator.data, tuple):
-            telemetry_data, alarms_data, battery_address_1_data, battery_address_2_data = self.coordinator.data
-            value = self.get_value(telemetry_data) or self.get_value(alarms_data)
+            battery_address_data, telemetry_data, alarms_data, system_details_data, protection_settings_data = self.coordinator.data
+            value = self.get_value(telemetry_data) or self.get_value(alarms_data) or self.get_value(system_details_data) or self.get_value(protection_settings_data)
         else:
             value = self.get_value(self.coordinator.data)
-
+            
+        # Interpret the value for alarm sensors
+        if base_attribute in ALARM_ATTRIBUTES:
+            interpreted_value = str(self.interpret_alarm(base_attribute, value))
+            _LOGGER.debug("Interpreted value for %s: %s", base_attribute, interpreted_value)
+            return interpreted_value   
         if value is None or value == '':
             if base_attribute == 'current':
                 _LOGGER.debug("Current seems to be None, setting to 0.00 to fix HA reporting as unknown")
@@ -222,11 +310,7 @@ class SeplosBMSSensorBase(CoordinatorEntity):
                 _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
                 return None
                 
-        # Interpret the value for alarm sensors
-        if base_attribute in ALARM_ATTRIBUTES:
-            interpreted_value = str(self.interpret_alarm(base_attribute, value))
-            _LOGGER.debug("Interpreted value for %s: %s", base_attribute, interpreted_value)
-            return interpreted_value
+
 
         _LOGGER.debug("Sensor state for %s: %s", self._name, value)
         return value
@@ -236,6 +320,8 @@ class SeplosBMSSensorBase(CoordinatorEntity):
     def unit_of_measurement(self):
         """Return the unit of measurement."""
         if self._attribute in ALARM_ATTRIBUTES:
+            return None  # No unit for alarms
+        if self._attribute in SYSTEM_ATTRIBUTES:
             return None  # No unit for alarms
         return self._unit
 
