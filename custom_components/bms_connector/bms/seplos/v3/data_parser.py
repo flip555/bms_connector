@@ -50,6 +50,7 @@ class V3PIATableData:
             f"min_cell_temperature: {self.min_cell_temperature}, "
             f"test: {self.test}"
         )
+
 class V3PIBTableData:
     def __init__(self):
         self.cell1_voltage = 0
@@ -122,6 +123,7 @@ def decode_pia_table(response):
 
 
 def decode_pib_table(response):
+    global pib_data
     data_fields = "0004240cdd0ce50cdf0cdd0ce40cdc0cda0ce10ce20ce20ce40cde0ce10cde0cdd0ce20b940b94e3e4"
     data_fields = response  # Function code for PIB
     if data_fields:
@@ -195,6 +197,7 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
     for response in msg:
         if response.startswith("~"):
             response = response[1:] 
+        
         _LOGGER.debug("Data Response: %s", response)
         if response == msg[0]:
             pia_data = decode_pia_table(response)

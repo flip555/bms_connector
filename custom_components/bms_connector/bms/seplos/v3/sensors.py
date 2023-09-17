@@ -1,7 +1,7 @@
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from ....connector.local_serial.local_serial import send_serial_command
+from ....connector.local_serial.seplos_v3_local_serial import send_serial_command
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
@@ -46,11 +46,11 @@ async def generate_sensors(hass, bms_type, port, battery_address, sensor_prefix,
 
 
     async def async_update_data():
-        commands = ["~0004100000127516\r", "~00041100001274ea\r"]
-        test_responses = ['0004241499fe6338d63a98005d03ca03e700070cdf0b940ce50cda0b940b9400000096009603e84f7c', '0004240cdd0ce50cdf0cdd0ce40cdc0cda0ce10ce20ce20ce40cde0ce10cde0cdd0ce20b940b94e3e4']
+        commands = ["0004100000127516", "00041100001274ea"]
+        #test_responses = ['0004241499fe6338d63a98005d03ca03e700070cdf0b940ce50cda0b940b9400000096009603e84f7c', '0004240cdd0ce50cdf0cdd0ce40cdc0cda0ce10ce20ce20ce40cde0ce10cde0cdd0ce20b940b94e3e4']
 
         # Loop for multiple battery packs should start here using TELEMETRY_COMMANDS from const.py 0-15 as COMMAND_1
-        telemetry_data_str = test_responses #await hass.async_add_executor_job(send_serial_command, commands, port)
+        telemetry_data_str = await hass.async_add_executor_job(send_serial_command, commands, port)
         battery_address, telemetry, alarms, system_details, protection_settings = extract_data_from_message(telemetry_data_str, True, True, True)
 
         return battery_address, telemetry, alarms, system_details, protection_settings
