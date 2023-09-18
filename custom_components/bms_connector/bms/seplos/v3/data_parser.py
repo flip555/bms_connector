@@ -111,11 +111,11 @@ def decode_pia_table(response):
         pia_data.soh = convert_bytes_to_data("UINT16", data_fields[12], data_fields[13]) * 0.1
         pia_data.cycle = convert_bytes_to_data("UINT16", data_fields[14], data_fields[15])
         pia_data.avg_cell_voltage = convert_bytes_to_data("UINT16", data_fields[16], data_fields[17]) * 0.001
-        pia_data.avg_cell_temperature = convert_bytes_to_data("UINT16", data_fields[18], data_fields[19]) * 0.01
+        pia_data.avg_cell_temperature = convert_bytes_to_data("UINT16", data_fields[18], data_fields[19]) * 0.1 - 273.15
         pia_data.max_cell_voltage = convert_bytes_to_data("UINT16", data_fields[20], data_fields[21]) * 0.001
         pia_data.min_cell_voltage = convert_bytes_to_data("UINT16", data_fields[22], data_fields[23]) * 0.001
-        pia_data.max_cell_temperature = convert_bytes_to_data("UINT16", data_fields[24], data_fields[25]) * 0.01
-        pia_data.min_cell_temperature = convert_bytes_to_data("UINT16", data_fields[26], data_fields[27]) * 0.01
+        pia_data.max_cell_temperature = convert_bytes_to_data("UINT16", data_fields[24], data_fields[25]) * 0.1 - 273.15
+        pia_data.min_cell_temperature = convert_bytes_to_data("UINT16", data_fields[26], data_fields[27]) * 0.1 - 273.15
 
         return pia_data  # Return the pia_data instance
     else:
