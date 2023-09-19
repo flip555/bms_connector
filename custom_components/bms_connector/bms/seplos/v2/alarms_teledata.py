@@ -1,5 +1,8 @@
 class Alarms:
+    """Represents an object to store alarm information."""
+    
     def __init__(self):
+        """Initialize an empty Alarms object with default values."""
         self.cellsCount = 0
         self.cellAlarm = []
         self.tempCount = 0
@@ -23,6 +26,7 @@ class Alarms:
         self.alarmEvent7 = 0
 
     def __str__(self):
+        """Return a string representation of the Alarms object."""
         return (
             f"cellsCount: {self.cellsCount}, "
             f"cellAlarm: {self.cellAlarm}, "
@@ -48,6 +52,7 @@ class Alarms:
         )
 
 def parse_teledata_info(info_str):
+    """Parse a string containing teledata information and return an Alarms object."""
     result = Alarms()
     cursor = 4
 
