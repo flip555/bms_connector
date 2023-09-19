@@ -51,4 +51,4 @@ max-complexity = 25
 
 # Exclude a directory from Flake8 analysis
 [flake8]
-exclude = assets
+exclude = "assets"
