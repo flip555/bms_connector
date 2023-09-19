@@ -196,7 +196,6 @@ async def generate_sensors(hass, bms_type, port, config_battery_address, sensor_
         SeplosBMSSensorBase(coordinator, port, "transient_overcurrent_protection", "Transient Overcurrent Protection", "A", "mdi:flash-alert", battery_address=battery_address, sensor_prefix=sensor_prefix),
         SeplosBMSSensorBase(coordinator, port, "output_soft_start_delay", "Output Soft Start Delay", "ms", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix),
         SeplosBMSSensorBase(coordinator, port, "battery_rated_capacity", "Battery Rated Capacity", "Ah", "mdi:flash-circle", battery_address=battery_address, sensor_prefix=sensor_prefix),
-        SeplosBMSSensorBase(coordinator, port, "soc", "SOC", "Ah", "mdi:gauge", battery_address=battery_address, sensor_prefix=sensor_prefix),
         SeplosBMSSensorBase(coordinator, port, "cell_invalidation_differential_pressure", "Cell Invalidation Differential Pressure", "V", "mdi:flash-alert", battery_address=battery_address, sensor_prefix=sensor_prefix),
         SeplosBMSSensorBase(coordinator, port, "cell_invalidation_recovery", "Cell Invalidation Recovery", "V", "mdi:flash", battery_address=battery_address, sensor_prefix=sensor_prefix),
         SeplosBMSSensorBase(coordinator, port, "equalization_opening_pressure_difference", "Equalization Opening Pressure Difference", "V", "mdi:flash-alert", battery_address=battery_address, sensor_prefix=sensor_prefix),

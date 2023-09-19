@@ -238,7 +238,7 @@ def decode_fourseven(hex_string):
         int.from_bytes(datai_bytes[112:114], byteorder='big') / 100.0,  # Discharge overcurrent protection: -210.00 A
         int.from_bytes(datai_bytes[114:116], byteorder='big') / 100.0,  # Transient overcurrent protection: -300.00 A
         int.from_bytes(datai_bytes[116:118], byteorder='big') / 1000.0,  # Output soft start delay: 2000 ms
-        int.from_bytes(datai_bytes[118:120], byteorder='big'),  # Battery rated capacity: 230.00 Ah
+        int.from_bytes(datai_bytes[118:120], byteorder='big') / 100.0,  # Battery rated capacity: 230.00 Ah
         int.from_bytes(datai_bytes[120:122], byteorder='big'),  # SOC: 100.00 Ah
         int.from_bytes(datai_bytes[122:124], byteorder='big') / 100.0,  # Cell invalidation differential pressure: 0.50 V
         int.from_bytes(datai_bytes[124:126], byteorder='big') / 100.0,  # Cell invalidation recovery: 0.30 V
