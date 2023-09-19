@@ -2,7 +2,9 @@
   "domain": "bms_connector",
   "name": "BMS Connector",
   "documentation": "https://github.com/flip555/bms_connector",
-  "codeowners": ["@flip555"],
+  "codeowners": [
+    "@flip555"
+  ],
   "version": "1.0.0",
   "config_flow": true,
   "iot_class": "local_polling",
