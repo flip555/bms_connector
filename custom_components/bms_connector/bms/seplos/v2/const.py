@@ -1,14 +1,3 @@
-"""Constants for Seplos BMS."""
-from logging import Logger, getLogger
-
-LOGGER: Logger = getLogger(__package__)
-
-# Basic Information
-NAME = "Seplos BMS"
-DOMAIN = "seplos_bms_ha"
-VERSION = "1.0.0"
-ATTRIBUTION = "Integration for Seplos BMS via serial communication and soon ESPHome Device."
-
 # Telemetry Commands Packs 00-15
 TELEMETRY_COMMANDS = {
     0: "~20004642E00200FD37\r",
@@ -48,12 +37,31 @@ TELEDATA_CODES = {
     14: "~20004644E00214FD30\r",
     15: "~20004644E00215FD2F\r"
 }
+
 ALARM_ATTRIBUTES = [
     "cellAlarm", "tempAlarm", "currentAlarm", "voltageAlarm",
     "customAlarms", "alarmEvent0", "alarmEvent1", "alarmEvent2",
     "alarmEvent3", "alarmEvent4", "alarmEvent5", "alarmEvent6",
     "alarmEvent7", "onOffState", "equilibriumState0", "equilibriumState1",
     "systemState", "disconnectionState0", "disconnectionState1"
+]
+
+SYSTEM_ATTRIBUTES = [
+    "device_name", "software_version", "manufacturer_name"
+]
+SETTINGS_ATTRIBUTES = [
+    "overcurrent_delay_recovery",
+    "total_voltage_overvoltage_protection",
+    "equalization_opening_voltage",
+    "monomer_undervoltage_recovery",
+    "monomer_low_pressure_recovery",
+    "monomer_overvoltage_protection",
+    "monomer_overvoltage_recovery",
+    "monomer_undervoltage_protection",
+    "monomer_low_pressure_alarm",
+    "monomer_high_pressure_recovery",
+    "battery_low_voltage_forbidden_charging",
+    "total_pressure_high_pressure_alarm"
 ]
 ALARM_MAPPINGS = {
     "alarmEvent0": [

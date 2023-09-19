@@ -1,0 +1,31 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Before continuing, please confirm that you have deleted any old entries that were added via the 'seplos_bms_ha' addon. Leaving old entries may cause sensor naming conflicts with the new version. Any data stored in the old sensors should be adopted by the new addon automatically.",
+                "data": {
+                    "confirm": "Please confirm you have deleted any old entries that were added via the 'seplos_bms_ha' addon before continuing!"
+                }
+            },
+            "bms_type": {
+                "description": "Please select your BMS Version from the list below. If your BMS is not listed, it is currently not supported. You can request support on our GitHub repository.",
+                "data": {
+                    "bms_type": "Please select your BMS"
+                }
+            },
+            "connector_port": {
+                "description": "Please enter the connection port for your BMS. For example, use '/dev/ttyUSB0' for local serial connections. ESPHome and Bluetooth connection ports may be available in the future.",
+                "data": {
+                    "connector_port": "Please enter your connection port"
+                }
+            },
+            "sensor_prefix": {
+                "description": "Please enter your battery address and desired sensor naming prefix. All sensors will automatically include the battery address as part of their names and cannot be removed.",
+                "data": {
+                    "battery_address": "Please enter your battery pack address",
+                    "sensor_prefix": "Please enter your desired sensor prefix"
+                }
+            }
+        }
+    }
+}

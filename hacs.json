@@ -1,6 +1,6 @@
 {
-    "name": "Seplos BMS HA",
-    "filename": "seplos_bms_ha.zip",
+    "name": "BMS Connector",
+    "filename": "bms_connector.zip",
     "hide_default_branch": true,
     "homeassistant": "2023.3.0",
     "render_readme": true,

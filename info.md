@@ -1,51 +1,56 @@
-# Seplos BMS HA Custom Integration for Home Assistant
+# Multi-BMS Home Assistant Integration (BMS Connector)
 
-Easily connect and integrate the Seplos Battery Management Systems (BMS) with Home Assistant. This integration offers detailed sensor readings, alarm notifications, and a plethora of valuable telemetry data directly from the BMS.
+Easily connect and integrate various Battery Management Systems (BMS) with Home Assistant using this custom integration. This versatile tool provides detailed sensor readings, alarm notifications, and a wealth of telemetry data directly from multiple BMS units.
 
-[![GitHub Discussions](https://img.shields.io/badge/GitHub-Discussions-0099ff?style=for-the-badge&logo=github)](https://github.com/flip555/seplos_bms_ha/discussions)
-[![GitHub Wiki](https://img.shields.io/badge/GitHub-Wiki-4db6ac?style=for-the-badge&logo=github)](https://github.com/flip555/seplos_bms_ha/wiki)
+[![GitHub Discussions](https://img.shields.io/badge/GitHub-Discussions-0099ff?style=for-the-badge&logo=github)](https://github.com/flip555/bms_connector/discussions)
+[![GitHub Wiki](https://img.shields.io/badge/GitHub-Wiki-4db6ac?style=for-the-badge&logo=github)](https://github.com/flip555/bms_connector/wiki)
 
 ## 🌟 Features
-### Seplos BMS 2.0
-- **Rapid Data Retrieval**: Fetch cell voltage for every cell in the system.
-- **Advanced Alarm Monitoring**: Get unambiguous feedback from different alarm states.
-- **Rich Telemetry Data**: Access vital information like temperatures, currents, and the system state.
-- **Debug Mode**: Dive deep and see the underlying data for thorough insights.
-- **High Frequency Polling**: Refreshes data every 5 seconds for up-to-the-minute updates.
+### Supported BMS Systems
+- **Seplos BMS 2.0**:
+  - **Integration Highlights**:
+    - Detailed Data: Fetch cell voltage for every cell in the system.
+    - Comprehensive Alarms: Get unambiguous feedback from different alarm states.
+    - Telemetry Insights: Access vital information like temperatures, currents, and the system state.
+    - Full Retrieval of BMS Settings: Retrieve configuration settings from the BMS.
+
+- **Seplos BMS 3.0**: 
+  - Cell Voltages, Pack Voltages Temp and Currents should all be available and working for a single battery. More coming very soon!
+
+- **Custom BMS Compatibility**: Enhanced scanning capability to find all battery packs (Note: Currently focused on pack 0).
 
 ## 🚧 Upcoming Features
-- Support for Seplos BMS 3.0.
-- Enhanced scanning capability to find all battery packs (Note: Currently focused on pack 0).
-- Improved config_flow checks and additional options.
-- Multilingual support with translations.
-- Codebase optimization and removal of unnecessary blueprint integration.
-- Robust error handling for better stability.
+- Extended support further for Seplos BMS 3.0.
+- Improved scanning capabilities for various BMS models.
+- Enhanced configuration options and multilingual support with translations.
+- Codebase optimization and removal of unnecessary blueprint integrations.
+- Robust error handling for enhanced stability.
 
 ## 🔧 Installation
 
 ### Via HACS (Home Assistant Community Store) as a Custom Repository
-1. Make sure [HACS](https://hacs.xyz/) is installed.
-2. Head over to the HACS Integrations page.
-3. Tap on the three dots in the upper right corner and pick "Custom repositories".
-4. Plug in the URL `https://github.com/flip555/seplos_bms_ha` and opt for `Integration` in the category dropdown.
-5. Hit "Add".
-6. You'll now find `Seplos BMS HA` in the Integrations list within HACS. Simply install it.
+1. Ensure you have [HACS](https://hacs.xyz/) installed.
+2. Go to the HACS Integrations page.
+3. Click the three dots in the upper right corner and select "Custom repositories".
+4. Enter the URL `https://github.com/flip555/bms_connector` and choose `Integration` from the category dropdown.
+5. Click "Add".
+6. You can now find `BMS Connector` in the Integrations list within HACS. Simply install it.
 
 ### Manual Installation
-1. Either clone this repo or grab the zip.
-2. Transfer the `seplos_bms_ha` folder from the repository into the `custom_components` directory within your Home Assistant configuration.
-3. Give Home Assistant a quick restart.
+1. Clone this repository or download the ZIP file.
+2. Transfer the `bms_connector` folder from the repository into the `custom_components` directory within your Home Assistant configuration.
+3. Restart Home Assistant.
 
 ## ⚙️ Configuration
-1. Access the Integrations page inside the Home Assistant UI.
-2. Tap the "+" icon located at the bottom.
-3. Type in "Seplos BMS HA" and commence the configuration process.
-4. Pinpoint the suitable source for your hardware.
-5. For users with the `RS485-USB` setup, punch in the USB port following the template `/dev/ttyUSBX`, where `X` represents the port digit (for instance, `/dev/ttyUSB0`).
-6. Click "Submit" to seal the deal.
+1. Access the Integrations page in the Home Assistant UI.
+2. Click the "+" icon at the bottom.
+3. Search for "BMS Connector" and start the configuration process.
+4. Select the appropriate source for your BMS hardware.
+5. For users with the `RS485-USB` setup, enter the USB port using the template `/dev/ttyUSBX`, where `X` represents the port number (e.g., `/dev/ttyUSB0`).
+6. Click "Submit" to complete the setup.
 
 ## 📸 Screenshots
-![Dashboard Visuals](https://github.com/flip555/seplos_bms_ha/blob/main/assets/dashboard.png)
+![Dashboard Visuals](https://github.com/flip555/bms_connector/blob/main/assets/dashboard.png)
 
 ## 🤝 Contributing Guidelines
 
@@ -91,12 +96,12 @@ When reporting issues, please be as descriptive as possible. Provide the steps t
 Thank you for your collaboration and contribution!
 
 ## 🆘 Support
-Facing a hiccup? Need a hand? Feel free to raise an issue on the [GitHub repository](https://github.com/flip555/seplos_bms_ha/issues).
+Encountering an issue or need assistance? Don't hesitate to open an issue on the [GitHub repository](https://github.com/flip555/bms_connector/issues).
 
 ## 📚 References
 
 - **ChatGPT**: Developed by OpenAI, ChatGPT is a large language model capable of understanding and generating human-like text.
-- **Seplos Protocol Manuals**: You can find these in the [assets/](https://github.com/flip555/seplos_bms_ha/tree/main/assets) directory of this repository.
+- **Seplos Protocol Manuals**: You can find these in the [assets/](https://github.com/flip555/bms_connector/tree/main/assets) directory of this repository.
 - **Integration Blueprint**: A valuable template for creating custom components for Home Assistant. [GitHub Repository](https://github.com/ludeeus/integration_blueprint)
-- **ESPHome Seplos BMS**: A related project which integrates Seplos BMS with ESPHome. [GitHub Repository](https://github.com/syssi/esphome-seplos-bms)
+- **ESPHome Seplos BMS**: A related project that integrates Seplos BMS with ESPHome. [GitHub Repository](https://github.com/syssi/esphome-seplos-bms)
 - **Modbus Seplos BMS Reader**: A Modbus implementation for reading Seplos BMS data. [GitHub Repository](https://github.com/g992/modbus-seplos-bms-reader)

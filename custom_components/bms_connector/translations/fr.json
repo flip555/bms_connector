@@ -1,0 +1,30 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Avant de continuer, veuillez confirmer que vous avez supprimé toutes les anciennes entrées ajoutées via l'addon 'seplos_bms_ha'. Le fait de laisser des anciennes entrées pourrait entraîner des conflits de nommage de capteurs avec la nouvelle version. Toutes les données stockées dans les anciens capteurs devraient être automatiquement adoptées par le nouvel addon.",
+                "data": {
+                    "confirm": "Veuillez confirmer que vous avez supprimé toutes les anciennes entrées ajoutées via l'addon 'seplos_bms_ha' avant de continuer !"
+                }
+            },
+            "bms_type": {
+                "description": "Veuillez sélectionner la version de votre BMS dans la liste ci-dessous. Si votre BMS ne figure pas dans la liste, il n'est actuellement pas pris en charge. Vous pouvez demander un support sur notre dépôt GitHub.",
+                "data": {
+                    "bms_type": "Veuillez sélectionner votre BMS"
+                }
+            },
+            "connector_port": {
+                "description": "Veuillez saisir le port de connexion de votre BMS. Par exemple, utilisez '/dev/ttyUSB0' pour les connexions série locales. Les ports de connexion ESPHome et Bluetooth pourraient être disponibles à l'avenir.",
+                "data": {
+                    "connector_port": "Veuillez saisir votre port de connexion"
+                }
+            },
+            "sensor_prefix": {
+                "description": "Veuillez entrer le préfixe de nommage de vos capteurs souhaité. Tous les capteurs incluront automatiquement l'adresse de la batterie dans leur nom et cela ne peut pas être supprimé.",
+                "data": {
+                    "sensor_prefix": "Veuillez entrer le préfixe de nommage de vos capteurs"
+                }
+            }
+        }
+    }
+}
