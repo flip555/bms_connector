@@ -11,12 +11,10 @@ from .sensor import initialize_bms_component
 PLATFORMS = ["sensor"]
 
 async def async_setup(hass, config):
-    """Set up the BMS Connector integration."""
     hass.data[DOMAIN] = {}
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up a BMS Connector entry."""
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data  # You can store entry data if needed
 
@@ -28,12 +26,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a BMS Connector entry."""
     if unloaded := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
     return unloaded
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload a BMS Connector entry."""
     await async_unload_entry(hass, entry)
     await async_setup_entry(hass, entry)
