@@ -1,5 +1,5 @@
 {
-    "name": "flip555/seplos_bms_ha",
+    "name": "flip555/bms_connector",
     "image": "mcr.microsoft.com/vscode/devcontainers/python:0-3.10-bullseye",
     "postCreateCommand": "scripts/setup",
     "forwardPorts": [
