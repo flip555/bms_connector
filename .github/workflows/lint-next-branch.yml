@@ -3,10 +3,10 @@ name: "Lint"
 on:
   push:
     branches:
-      - "main"
+      - "next-branch"
   pull_request:
     branches:
-      - "main"
+      - "next-branch"
 
 jobs:
   ruff:
@@ -15,7 +15,9 @@ jobs:
     steps:
         - name: "Checkout the repository"
           uses: "actions/checkout@v1.0.0"
-
+          with:
+            ref: "refs/heads/next-branch"
+            
         - name: "Set up Python"
           uses: actions/setup-python@v4.6.1
           with:
