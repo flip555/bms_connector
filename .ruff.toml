@@ -45,6 +45,10 @@ ignore = [
     "E731",  # do not assign a lambda expression, use a def
 ]
 
+exclude = [
+    "assets/",
+]
+
 [flake8-pytest-style]
 fixture-parentheses = false
 

@@ -157,7 +157,7 @@ def decode_pib_table(response):
 # Function to retrieve PIC data
 # PIC DOESNT WORK AT THE MOMENT!
 def retrieve_pic_data(pack_address):
-    data_fields = send_receive_command(pack_address, 0x12)  # Function code for PIC
+    data_fields = 0 # Function code for PIC
     if data_fields:
         data_fields = data_fields[6:]
         # Parse and display PIC data (if there's enough data)
@@ -179,7 +179,6 @@ def retrieve_pic_data(pack_address):
             }
             return pic_data
         else:
-            print("Warning: Not enough data in PIC response. The response may be incomplete.")
             return None
     else:
         return None
