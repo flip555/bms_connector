@@ -6,5 +6,9 @@
   "version": "1.0.0",
   "config_flow": true,
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/flip555/bms_connector/issues"
+  "issue_tracker": "https://github.com/flip555/bms_connector/issues",
+  "dependencies": [],
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "requirements": []
 }
