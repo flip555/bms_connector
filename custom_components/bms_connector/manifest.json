@@ -9,6 +9,5 @@
   "issue_tracker": "https://github.com/flip555/bms_connector/issues",
   "dependencies": [],
   "integration_type": "hub",
-  "iot_class": "cloud_polling",
   "requirements": []
 }
