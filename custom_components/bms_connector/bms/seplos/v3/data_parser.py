@@ -184,16 +184,18 @@ def retrieve_pic_data(pack_address):
     else:
         return None
 
-def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=True, debug=True):
+def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=True, debug=True, config_battery_address=True):
     processed_data = []
     processed_data1 = []
     processed_data2 = []
     processed_data3 = []
-    address_string = None
+    address_string = config_battery_address
     address_string1 = None
     address_string2 = None
     address_string3 = None
     
+    # WHOLE SECTION NEEDS WORK
+
     for response in msg:
         if response.startswith("~"):
             response = response[1:] 

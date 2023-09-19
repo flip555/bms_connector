@@ -40,7 +40,7 @@ class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_connector_port(self, user_input=None):
         if user_input is not None:
             # Store user input and transition to the next step
-            self.user_input["connector_port"] = user_input["connector_port"]
+            self.user_input.update(user_input)
             return await self.async_step_sensor_prefix()
 
         data_schema = vol.Schema({
@@ -54,12 +54,14 @@ class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_sensor_prefix(self, user_input=None):
         if user_input is not None:
-            # Store user input and transition to the additional config step
-            title = f"{self.user_input['bms_type']} - {self.user_input['connector_port']}"
+            # Store user input and create the configuration entry
+            self.user_input.update(user_input)
+            title = f"{self.user_input['bms_type']} - {self.user_input['connector_port']} - {self.user_input['battery_address']} - {self.user_input['sensor_prefix']}"
             return self.async_create_entry(title=title, data=self.user_input)
 
         data_schema = vol.Schema({
-            vol.Required("sensor_prefix", description="Please enter your desired sensor prefix", default="Seplos BMS V2 0x00 - "): str,
+            vol.Required("battery_address", description="Please enter the battery address", default="0x00"): str,
+            vol.Required("sensor_prefix", description="Please enter your desired sensor prefix", default="Seplos BMS HA"): str,
         })
 
         return self.async_show_form(

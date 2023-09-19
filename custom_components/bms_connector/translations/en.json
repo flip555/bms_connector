@@ -20,8 +20,9 @@
                 }
             },
             "sensor_prefix": {
-                "description": "Please enter your desired sensor naming prefix. All sensors will automatically include the battery address as part of their names and cannot be removed.",
+                "description": "Please enter your battery address and desired sensor naming prefix. All sensors will automatically include the battery address as part of their names and cannot be removed.",
                 "data": {
+                    "battery_address": "Please enter your battery pack address",
                     "sensor_prefix": "Please enter your desired sensor prefix"
                 }
             }

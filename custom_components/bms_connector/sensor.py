@@ -24,7 +24,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: config_entrie
         sensor_prefix = config_entry.data.get("sensor_prefix")
         bms_type = config_entry.data.get("bms_type")
         port = config_entry.data.get("connector_port")
-        battery_address = 0x00 #config_entry.data.get("battery_address")
+        battery_address = config_entry.data.get("battery_address")
         entry = config_entry.data
 
         _LOGGER.debug("Sensor Prefix: %s", sensor_prefix)

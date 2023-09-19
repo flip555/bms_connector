@@ -169,20 +169,6 @@ def decode_fourseven(hex_string):
     chksum = hex_string[-4:-2]
     eoi = hex_string[-2]
 
-    # Decode INFOFLAG
-    cell_high_voltage_limit = infoflag & 0x01
-    cell_low_voltage_limit_alarm = (infoflag >> 1) & 0x01
-    cell_low_voltage_limit_protect = (infoflag >> 2) & 0x01
-    charge_high_temperature_limit = (infoflag >> 3) & 0x01
-    charge_low_temperature_limit = (infoflag >> 4) & 0x01
-    charge_current_limit = (infoflag >> 5) & 0x01
-    module_high_voltage_limit = (infoflag >> 6) & 0x01
-    module_low_voltage_limit_alarm = (infoflag >> 7) & 0x01
-    module_low_voltage_limit_protect = (infoflag >> 8) & 0x01
-    discharge_high_temperature_limit = (infoflag >> 9) & 0x01
-    discharge_low_temperature_limit = (infoflag >> 10) & 0x01
-    discharge_current_limit = (infoflag >> 11) & 0x01
-
 
     # Convert DATAI to human-readable format
     datai_values = [
