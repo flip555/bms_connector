@@ -62,7 +62,6 @@ async def generate_sensors(hass, bms_type, port, config_battery_address, sensor_
 
 
     async def async_update_data():
-
         #Need to generate these, they're all for 0x00 atm .... 42H, 44H, 47H, 51H
         V2_COMMAND_ARRAY = {
             "0x00": ["~20004642E00200FD37\r", "~20004644E00200FD35\r", "~20004647E00200FD32\r", "~20004651E00200FD37\r"],
