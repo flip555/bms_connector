@@ -12,13 +12,15 @@ Easily connect and integrate various Battery Management Systems (BMS) with Home 
     - Detailed Data: Fetch cell voltage for every cell in the system.
     - Comprehensive Alarms: Get unambiguous feedback from different alarm states.
     - Telemetry Insights: Access vital information like temperatures, currents, and the system state.
-    - Full Retrieval of BMS Settings: Retrieve all configuration settings from the BMS.
+    - Full Retrieval of BMS Settings: Retrieve configuration settings from the BMS.
 
-- **Seplos BMS 3.0**: Coming soon!
+- **Seplos BMS 3.0**: 
+  - Cell Voltages, Pack Voltages Temp and Currents should all be available and working for a single battery. More coming very soon!
+
 - **Custom BMS Compatibility**: Enhanced scanning capability to find all battery packs (Note: Currently focused on pack 0).
 
 ## 🚧 Upcoming Features
-- Extended support for Seplos BMS 3.0.
+- Extended support further for Seplos BMS 3.0.
 - Improved scanning capabilities for various BMS models.
 - Enhanced configuration options and multilingual support with translations.
 - Codebase optimization and removal of unnecessary blueprint integrations.
