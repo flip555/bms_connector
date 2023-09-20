@@ -259,8 +259,9 @@ class SeplosBMSSensorBase(CoordinatorEntity):
 
         # For other alarm events, interpret them as bit flags
         triggered_alarms = [flag for idx, flag in enumerate(flags) if value is not None and value & (1 << idx)]
-        return ', '.join(triggered_alarms) if triggered_alarms else "No Alarm"
-   
+        return ', '.join(str(triggered_alarms)) if triggered_alarms else "No Alarm"
+
+
     def __init__(self, coordinator, port, attribute, name, unit=None, icon=None, battery_address=None, sensor_prefix=None):
         """Initialize the sensor."""
         super().__init__(coordinator)
