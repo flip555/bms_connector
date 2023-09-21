@@ -134,6 +134,8 @@ async def generate_sensors(hass, bms_type, port, config_battery_address, sensor_
         ]
     )
     setting_sensors = [
+        SeplosBMSSensorBase(coordinator, port, "soc_ah", "SOC", "Ah", "mdi:gauge", battery_address=battery_address, sensor_prefix=sensor_prefix),
+        SeplosBMSSensorBase(coordinator, port, "monomer_high_voltage_alarm", "Monomer High Voltage Alarm", "mV", "mdi:flash-circle", battery_address=battery_address, sensor_prefix=sensor_prefix),
         SeplosBMSSensorBase(coordinator, port, "overcurrent_delay_recovery", "Overcurrent Delay Recovery", "s", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix),
         SeplosBMSSensorBase(coordinator, port, "total_voltage_overvoltage_protection", "Total Voltage Overvoltage Protection", "mV", "mdi:flash-circle", battery_address=battery_address, sensor_prefix=sensor_prefix),
         SeplosBMSSensorBase(coordinator, port, "equalization_opening_voltage", "Equalization Opening Voltage", "mV", "mdi:flash-circle", battery_address=battery_address, sensor_prefix=sensor_prefix),
