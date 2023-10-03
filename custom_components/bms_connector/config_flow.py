@@ -1,7 +1,7 @@
 from homeassistant import config_entries
 import voluptuous as vol
 
-from .const import DOMAIN, BMS_TYPES
+from .const import DOMAIN, BMS_TYPE_DEFAULTS
 
 class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
@@ -26,10 +26,15 @@ class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             # Store user input and transition to the next step
             self.user_input = user_input
+            bms_type = self.user_input.get('bms_type')
+            if bms_type in BMS_TYPE_DEFAULTS:
+                defaults = BMS_TYPE_DEFAULTS[bms_type]
+                self.user_input['default_prefix'] = defaults['default_prefix']
+                self.user_input['default_address'] = defaults['default_address']
             return await self.async_step_connector_port()
 
         data_schema = vol.Schema({
-            vol.Required("bms_type", description="Please select your BMS"): vol.In(BMS_TYPES),
+            vol.Required("bms_type", description="Please select your BMS"): vol.In(list(BMS_TYPE_DEFAULTS.keys())),
         })
 
         return self.async_show_form(
@@ -60,8 +65,8 @@ class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(title=title, data=self.user_input)
 
         data_schema = vol.Schema({
-            vol.Required("battery_address", description="Please enter the battery address", default="0x00"): str,
-            vol.Required("sensor_prefix", description="Please enter your desired sensor prefix", default="Seplos BMS HA"): str,
+            vol.Required("battery_address", description="Please enter the battery address", default=f"{self.user_input['default_address']}"): str,
+            vol.Required("sensor_prefix", description="Please enter your desired sensor prefix", default=f"{self.user_input['default_prefix']}"): str,
         })
 
         return self.async_show_form(
