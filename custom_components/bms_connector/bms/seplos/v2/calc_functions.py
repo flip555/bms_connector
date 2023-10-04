@@ -1,5 +1,3 @@
-import logging
-_LOGGER = logging.getLogger(__name__)
 from .const import (
     ALARM_MAPPINGS,
 )
@@ -121,7 +119,6 @@ def lowest_temp_sensor(data):
 def balancer_cell_1(data):
     alarms = extract_alarms(data)
     active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-    _LOGGER.debug("Balancer  '%s'", active_balancers)
     if "Cell 01" in active_balancers:
         return True
     else:
@@ -130,7 +127,6 @@ def balancer_cell_1(data):
 def balancer_cell_2(data):
     alarms = extract_alarms(data)
     active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-
     if "Cell 02" in active_balancers:
         return True
     else:
