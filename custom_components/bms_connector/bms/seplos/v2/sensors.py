@@ -82,7 +82,8 @@ async def generate_sensors(hass, bms_type, port, config_battery_address, sensor_
                 result = self._calc_function(self.coordinator.data)
                 if isinstance(result, bool):
                     return None  # No unit for boolean states
-
+                else:
+                    return ''
         
     async def async_update_data():
         #Need to generate these, they're all for 0x00 atm .... 42H, 44H, 47H, 51H
