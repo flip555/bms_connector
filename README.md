@@ -2,6 +2,7 @@
 
 Easily connect and integrate various Battery Management Systems (BMS) with Home Assistant using this custom integration. This versatile tool provides detailed sensor readings, alarm notifications, and a wealth of telemetry data directly from multiple BMS units.
 
+[![Discord](https://img.shields.io/discord/1161651448011034734?style=for-the-badge&logo=discord)](https://discord.gg/4eQbPEETBR)  <!-- Add your Discord server invite link here -->
 [![GitHub Discussions](https://img.shields.io/badge/GitHub-Discussions-0099ff?style=for-the-badge&logo=github)](https://github.com/flip555/bms_connector/discussions)
 [![GitHub Wiki](https://img.shields.io/badge/GitHub-Wiki-4db6ac?style=for-the-badge&logo=github)](https://github.com/flip555/bms_connector/wiki)
 
