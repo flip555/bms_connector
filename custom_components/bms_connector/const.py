@@ -5,11 +5,6 @@ DOMAIN_DATA = f"{DOMAIN}_data"
 VERSION = "1.1.0"
 ATTRIBUTION = "Integration for BMS via serial communication."
 
-BMS_TYPE_DEFAULTS = {
-    "SEPLV2": {"bms_name": "SEP BMS V2 (SEPLV2)", "default_prefix": "Seplos BMS HA", "default_address": "0x00"},
-    "SEPLV3": {"bms_name": "SEP BMS V3 (SEPLV3)", "default_prefix": "Seplos BMS V3", "default_address": "0x01"},
-}
-
 # Platforms
 SENSOR = "sensor"
 BINARY_SENSOR = "binary_sensor"
@@ -17,7 +12,8 @@ SELECT = "select"
 NUMBER = "number"
 PLATFORMS = [SENSOR, BINARY_SENSOR, SELECT, NUMBER]
 
-
+# === CONTRIBUTING-ADDON-MARKER:REGISTER-START ===
+# Add new manufacturer model entries below following the existing structure.
 HEH_REGISTER = {
     "00000": {
         "option_name": "BMS Connector Global Settings",
@@ -61,3 +57,4 @@ HEH_REGISTER = {
         }
     }
 }
+# === CONTRIBUTING-ADDON-MARKER:REGISTER-END ===

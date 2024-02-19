@@ -6,31 +6,26 @@ import importlib
 import sys
 from homeassistant.core import callback
 
-# ---------------------------------------------
-# ------------- CONFIG IMPORTS START ----------
-# ---------------------------------------------
+# === CONTRIBUTING-ADDON-MARKER:IMPORTS-START ===
 # Add your module imports here. 
 # If you're adding a new module, import it in this section.
 from .config_flows.bms.seplos import SeplosConfigFlowMethods, SeplosOptionsFlowMethods
+
 # Example: 
 # from .config_flows.category.file import YourMethodName
-# ---------------------------------------------
-# ---------------------------------------------
+# === CONTRIBUTING-ADDON-MARKER:IMPORTS-END ===
 
 _LOGGER = logging.getLogger(__name__)
 class BMSConnectorOptionsFlow(config_entries.OptionsFlow,                                
-                                # ---------------------------------------------
-                                # ---------- ADD NEW METHODS HERE -------------
-                                # ---------------------------------------------
+                                # === CONTRIBUTING-ADDON-MARKER:METHODS-START ===
                                 # This is where you add method references 
                                 # for new modules you've imported.
                                 SeplosOptionsFlowMethods, 
+
                                 # Example:
                                 # YourMethodName,
-                                # ---------------------------------------------
-                                # ---------------------------------------------
+                                # === CONTRIBUTING-ADDON-MARKER:METHODS-END ===
                                 ):
-    # This is a stub. Here you would define the options schema and the logic for updating options.
     def __init__(self, config_entry):
         self.config_entry = config_entry
 
@@ -62,16 +57,14 @@ class BMSConnectorOptionsFlow(config_entries.OptionsFlow,
         )
 
 class BMSConnectorConfigFlow(config_entries.ConfigFlow,
-                                # ---------------------------------------------
-                                # ---------- ADD NEW METHODS HERE -------------
-                                # ---------------------------------------------
+                                # === CONTRIBUTING-ADDON-MARKER:METHODS-START ===
                                 # This is where you add method references 
                                 # for new modules you've imported.
                                 SeplosConfigFlowMethods, 
+
                                 # Example:
                                 # YourMethodName,
-                                # ---------------------------------------------
-                                # ---------------------------------------------
+                                # === CONTRIBUTING-ADDON-MARKER:METHODS-END ===
                             domain=DOMAIN):
     VERSION = 1
 
