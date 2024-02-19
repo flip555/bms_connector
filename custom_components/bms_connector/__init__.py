@@ -1,14 +1,16 @@
 from __future__ import annotations
-
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr, entity_registry as er, config_validation as cv
 
-from .const import DOMAIN
+from .const import DOMAIN, PLATFORMS
+import voluptuous as vol
+from .modules.global_settings import HomeEnergyHubGlobalSettings
+from .modules.bms.seplos.v2old import SeplosV2BMS
+from .modules.bms.seplos.v2 import SeplosV2BMSDevice
+import logging
+_LOGGER = logging.getLogger(__name__)
 
-# Import the initialize_bms_component function from sensor.py
-from .sensor import initialize_bms_component
-
-PLATFORMS = ["sensor"]
 
 async def async_setup(hass, config):
     hass.data[DOMAIN] = {}
@@ -16,9 +18,30 @@ async def async_setup(hass, config):
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = entry.data  # You can store entry data if needed
+    
+    # Use options if they exist, otherwise default to entry data
+    config_data = entry.data
+    hass.data[DOMAIN][entry.entry_id] = config_data
+    # Logical Checks and coordinators should be set here!
+    try:
+        # Check the disclaimer value and proceed accordingly
+        if config_data.get("home_enery_hub_first_run") == 1:
+            _LOGGER.debug("Home Energy Hub Global Settings Loading...")
+            await HomeEnergyHubGlobalSettings(hass, entry)
+        elif config_data.get("home_energy_hub_registry") in ["30101"]:
+            _LOGGER.debug("Seplos V2 BMS Selected..")
+            await SeplosV2BMS(hass, entry)
+        elif config_data.get("home_energy_hub_registry") in ["30110"]:
+            _LOGGER.debug("Seplos V2 BMS Device Selected..")
+            await SeplosV2BMSDevice(hass, entry)
+        else:
+            _LOGGER.error("Error Setting up Entry")
 
-    await initialize_bms_component(hass, entry)
+    except Exception as e:
+        _LOGGER.error("Error setting up BMS Connector: %s", e)
+
+    #await HomeEnergyHubINIT(hass, entry)
+
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
@@ -31,5 +54,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unloaded
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    await async_unload_entry(hass, entry)
-    await async_setup_entry(hass, entry)
+    if entry.data.get("home_energy_hub_registry") in ["20191"] or entry.data.get("home_energy_hub_registry") in ["20101"]:
+        # Unload and setup entry again
+        await async_unload_entry(hass, entry)
+        await async_setup_entry(hass, entry)
+
+        # Update stored data with the new configuration
+        hass.data[DOMAIN][entry.entry_id] = entry.data
+    else:
+        await async_unload_entry(hass, entry)
+        await async_setup_entry(hass, entry)
+
+
