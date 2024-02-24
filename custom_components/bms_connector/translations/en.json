@@ -22,10 +22,11 @@
                 "description": "Please select your region"
             },
             "seplos_bms_v2_device": {
-                "description": "Please enter the connection port and select the number of battery packs are attached to your BMS. For example, use '/dev/ttyUSB0' for USB serial connections and select 1 for a single battery.",
+                "description": "Please select the connection port and select the number of battery packs are attached to your BMS.",
                 "data": {
                     "usb_port": "USB Serial Port",
                     "battery_address": "Battery Address",
+                    "name_prefix": "Please enter your desired sensor prefix",
                     "battery_pack_count": "Number of Battery Packs",
                     "sensor_update_frequency": "Update Frequency (s)"
                 }
@@ -78,7 +79,7 @@
                 "data": {
                     "usb_port": "USB Serial Port",
                     "battery_address": "Battery Address",
-                    "name_prefix": "Entity Name Prefix",
+                    "name_prefix": "Entity Name Prefix **CHANGING THIS WILL RENAME ENTITIES**",
                     "battery_pack_count": "Number of Battery Packs",
                     "sensor_update_frequency": "Update Frequency (s)"
                 }
