@@ -10,7 +10,6 @@ import voluptuous as vol
 # Add your module imports here. 
 # If you're adding a new module, import it in this section.
 from .modules.global_settings import HomeEnergyHubGlobalSettings
-from .modules.bms.seplos.v2old import SeplosV2BMS
 from .modules.bms.seplos.v2 import SeplosV2BMSDevice
 
 # Example: 
