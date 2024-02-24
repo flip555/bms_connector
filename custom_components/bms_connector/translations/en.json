@@ -55,124 +55,30 @@
                     "battery_address": "Please enter your battery pack address",
                     "sensor_prefix": "Please enter your desired sensor prefix"
                 }
-            },
-            "octopus_tariff_engine_agile": {
-                "description": "",
-                "data": {
-                    "current_region": "Please select your required region(s)"
-                }
-            },
-            "octopus_tariff_engine_cosy": {
-                "description": "",
-                "data": {
-                    "current_region": "Please select your required region(s)"
-                }
-            },
-            "octopus_tariff_engine_go": {
-                "description": "",
-                "data": {
-                    "current_region": "Please select your required region(s)"
-                }
-            },
-            "octopus_tariff_engine_tracker": {
-                "description": "",
-                "data": {
-                    "fuel": "Please select your required fuels(s)",
-                    "current_region": "Please select your required region(s)"
-                }
-            },
-            "octopus_tariff_engine_flexible": {
-                "description": "",
-                "data": {
-                    "fuel": "Please select your required fuels(s)",
-                    "current_region": "Please select your required region(s)"
-                }
             }
         }
     },
     "options": {
         "step": {
             "home_energy_hub_global_options": {
-                "title": "Home Energy Hub Global Settings",
+                "title": "BMS Connector Global Settings",
                 "data": {
                     "disclaimer": "This add-on is designed for informational and control purposes only. Any electrical installations or adjustments should only be carried out by qualified professionals. It's essential to ensure that all devices connected to this add-on have the appropriate safety configurations in place. By checking this box, you acknowledge and accept that the developers hold no liability for any damage or issues that may result from the use of this add-on. \n\r WARNING: UNCHECKING THIS WILL STOP ALL ENTRIES WORKING!",
                     "anon_reporting_confirm": " (Optional) We may in the future start collecting anonymous usage data for statistical reports, if you would like to enable this for this entry please opt in by ticking the box."
                 },
                 "data_description": {
-                    "disclaimer": "Unchecking this box will disable all Home Energy Hub Entries from running!",
-                    "anon_reporting_confirm": "Unchecking this box will disable all Home Energy Hub Entries from running!"
+                    "disclaimer": "Unchecking this box will disable all BMS Connector Entries from running!",
+                    "anon_reporting_confirm": "Unchecking this box will disable all BMS Connector Entries from running!"
                 }
 
 
-            },
-            "octopus_options_agile_tariffs": {
-                "title": "Agile Tariff Settings",
-                "data": {
-                    "octopus_api_update_frequency": "Octopus API Fetch Frequency (s)",
-                    "sensor_update_frequency": "Home Assistant Update Frequency (s)"
-                }
-            },
-            "octopus_options_tracker_tariffs": {
-                "title": "Tracker Tariff Settings",
-                "data": {
-                    "octopus_api_update_frequency": "Octopus API Fetch Frequency (s)",
-                    "sensor_update_frequency": "Home Assistant Update Frequency (s)"
-                }
-            },
-            "octopus_options_flexible_tariffs": {
-                "title": "Flexible Tariff Settings",
-                "data": {
-                    "octopus_api_update_frequency": "Octopus API Fetch Frequency (s)",
-                    "sensor_update_frequency": "Home Assistant Update Frequency (s)"
-                }
-            },
-            "octopus_options_tariff_engine_agile": {
-                "title": "Agile Tariff Settings",
-                "data": {
-                    "octopus_api_update_frequency": "Octopus API Fetch Frequency (s)",
-                    "sensor_update_frequency": "Home Assistant Update Frequency (s)",
-                    "current_region": "Please select your required region(s)"
-                }
-            },
-            "octopus_options_tariff_engine_cosy": {
-                "title": "Cosy Tariff Settings",
-                "data": {
-                    "octopus_api_update_frequency": "Octopus API Fetch Frequency (s)",
-                    "sensor_update_frequency": "Home Assistant Update Frequency (s)",
-                    "current_region": "Please select your required region(s)"
-                }
-            },
-            "octopus_options_tariff_engine_go": {
-                "title": "Go Tariff Settings",
-                "data": {
-                    "octopus_api_update_frequency": "Octopus API Fetch Frequency (s)",
-                    "sensor_update_frequency": "Home Assistant Update Frequency (s)",
-                    "current_region": "Please select your required region(s)"
-                }
-            },
-            "octopus_options_tariff_engine_tracker": {
-                "title": "Tracker Tariff Settings",
-                "data": {
-                    "octopus_api_update_frequency": "Octopus API Fetch Frequency (s)",
-                    "sensor_update_frequency": "Home Assistant Update Frequency (s)",
-                    "fuel": "Please select your required fuels(s)",
-                    "current_region": "Please select your required region(s)"
-                }
-            },
-            "octopus_options_tariff_engine_flexible": {
-                "title": "Flexible Tariff Settings",
-                "data": {
-                    "octopus_api_update_frequency": "Octopus API Fetch Frequency (s)",
-                    "sensor_update_frequency": "Home Assistant Update Frequency (s)",
-                    "fuel": "Please select your required fuels(s)",
-                    "current_region": "Please select your required region(s)"
-                }
             },
             "seplos_options_bms_v2": {
                 "title": "Seplos BMS V2 Settings",
                 "data": {
                     "usb_port": "USB Serial Port",
                     "battery_address": "Battery Address",
+                    "name_prefix": "Entity Name Prefix",
                     "battery_pack_count": "Number of Battery Packs",
                     "sensor_update_frequency": "Update Frequency (s)"
                 }
