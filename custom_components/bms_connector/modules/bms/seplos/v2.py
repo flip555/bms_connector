@@ -14,6 +14,10 @@ import logging
 import socket
 from datetime import datetime, timezone, timedelta
 from homeassistant.helpers import device_registry as dr
+from .v2_cid_42 import process_cid_42
+from .v2_cid_44 import process_cid_44
+from .v2_cid_47 import process_cid_47
+from .v2_cid_51 import process_cid_51
 
 from ....const import (
     NAME,
@@ -158,6 +162,8 @@ async def SeplosV2BMSDevice(hass, entry):
     name_prefix = entry.data.get("name_prefix")
     comm_type = "usb_serial"
     device_registry = dr.async_get(hass)
+    sensors = {}
+    binary_sensors = {}
 
     if comm_type == "usb_serial":
         #asyncio.create_task(listen_serial_port(entry.data.get("usb_port")))
@@ -169,8 +175,7 @@ async def SeplosV2BMSDevice(hass, entry):
         raise ValueError("Invalid communication interface specified")
 
     async def async_update_data():
-        sensors = {}
-        binary_sensors = {}
+
         data_coll = {}
         data_coll['seplos'] = 'ok'
         data_coll['id'] = entry.entry_id
@@ -216,350 +221,38 @@ async def SeplosV2BMSDevice(hass, entry):
             CID_44_RESPONSE = data[1]
             CID_47_RESPONSE = data[2]
             CID_51_RESPONSE = data[3]
-            #if (battery_address == "0x03"):
-                #CID_42_RESPONSE = "~2003460010960003100CE40CE10CE40CE20CE40CE10CE30CE30CE30CE50CE20CE50CE40CE50CE20CE5060B360B320B340B310B6B0B44F8EE149F6F140A76C003A776C0000603E8149F00380000029B021ADC9E$"
+
+            if (battery_address == "0x03"):
+                CID_42_RESPONSE = "~2003460010960003100CE40CE10CE40CE20CE40CE10CE30CE30CE30CE50CE20CE50CE40CE50CE20CE5060B360B320B340B310B6B0B44F8EE149F6F140A76C003A776C0000603E8149F00380000029B021ADC9E"
+                CID_44_RESPONSE = "~20034600806200001000000000000000000000000000000000060000000000000000140000000000000300000100000000000000000001EB33"
+                CID_47_RESPONSE = "~200346008152003C0DAC0D480B540BB80E420E100A8C0B540DE805DC16761644122012C016801676104011F816F816A80C9F0C810ABF0ADD0CD10C9F0A470AAB0CB30C810A470AC90CD10C9F0A150AAB0AAB0B0F0C9F0C810AAB0AC90D030CD10A470AAB0E2F0DFD0E930DFD4E204C2CAFECB0B45208ADF88AD007D059D859D81B321E1E140A100A0A1E3C0505010A0A1EF0300F0560506409000D0008FFFEFF3FBF819F1E313130312D5350373620B2A0"
+                CID_51_RESPONSE = "~20034600C040313130312D5350373620100443414E3A56696374726F6E202020202020202020F098"
 
             battery_pack_from_response = await get_battery_pack_identifier_if_normal(CID_42_RESPONSE)
 
             if (int(battery_pack_from_response) == int(current_address)):
-                new_sensors = {}
-                # PROCESS 42H CODES
-                info_str = CID_42_RESPONSE
 
-                if info_str.startswith("~"):
-                    info_str = info_str[1:]
+                CID_42_SENSORS, lowest_voltage_value, highest_voltage_value, cellsCount, cellVoltage = await process_cid_42(CID_42_RESPONSE, battery_address, name_prefix, entry)
+                sensors.update(CID_42_SENSORS)
 
-                msg_wo_chk_sum = info_str[:-4]
-                info_str = msg_wo_chk_sum[12:]
-                cursor = 4
+                CID_51_SENSORS, manufacturer_name, software_version, device_name = await process_cid_51(CID_51_RESPONSE, battery_address, name_prefix, entry)
+                sensors.update(CID_51_SENSORS)
 
-                cellsCount = int(info_str[cursor:cursor+2], 16)
-                cursor += 2
-                cellVoltage = []
-                temperatures = []
-                for _ in range(cellsCount):
-                    cellVoltage.append(int(info_str[cursor:cursor+4], 16))
-                    cursor += 4
+                CID_44_SENSORS, CID_44_BINARY_SENSORS = await process_cid_44(CID_44_RESPONSE, battery_address, name_prefix, entry, lowest_voltage_value, highest_voltage_value, cellsCount, cellVoltage)
+                sensors.update(CID_44_SENSORS)
+                binary_sensors.update(CID_44_BINARY_SENSORS)
 
-                tempCount = int(info_str[cursor:cursor+2], 16)
-                cursor += 2
-                for _ in range(tempCount):
-                    temperature = (int(info_str[cursor:cursor+4], 16) - 2731) / 10
-                    temperatures.append(temperature)
-                    cursor += 4
+                CID_47_SENSORS = await process_cid_47(CID_47_RESPONSE, battery_address, name_prefix, entry)
+                sensors.update(CID_47_SENSORS)
 
-
-                current = int(info_str[cursor:cursor+4], 16)
-                if current > 32767:
-                    current -= 65536 
-                current /= 100 
-                data_coll['cur'] = current
-                cursor += 4
-                voltage = int(info_str[cursor:cursor+4], 16) / 100
-                data_coll['v'] = voltage
-                cursor += 4
-                resCap = int(info_str[cursor:cursor+4], 16) / 100
-                data_coll['remc'] = resCap
-                cursor += 4
-                customNumber = int(info_str[cursor:cursor+2], 16)
-                cursor += 2
-                capacity = int(info_str[cursor:cursor+4], 16) / 100
-                cursor += 4
-                soc = int(info_str[cursor:cursor+4], 16) / 10
-                data_coll['soc'] = soc
-                cursor += 4
-                ratedCapacity = int(info_str[cursor:cursor+4], 16) / 100
-                data_coll['ratec'] = ratedCapacity
-                cursor += 4
-                cycles = int(info_str[cursor:cursor+4], 16)
-                cursor += 4
-                soh = int(info_str[cursor:cursor+4], 16) / 10
-                cursor += 4
-                portVoltage = int(info_str[cursor:cursor+4], 16) / 100
-
-                # Assuming cellVoltage is a list containing the voltages of each cell
-                highest_voltage = max(enumerate(cellVoltage), key=lambda x: x[1])
-                lowest_voltage = min(enumerate(cellVoltage), key=lambda x: x[1])
-
-                # highest_voltage and lowest_voltage are tuples in the form (index, value)
-                highest_voltage_cell_number = highest_voltage[0] + 1  # Adding 1 because cell numbering usually starts from 1
-                highest_voltage_value = highest_voltage[1]
-
-                lowest_voltage_cell_number = lowest_voltage[0] + 1  # Adding 1 for the same reason
-                lowest_voltage_value = lowest_voltage[1]
-                cell_difference =  highest_voltage[1] - lowest_voltage[1]
-                nominal_voltage = cellsCount * 3.3125
-
-                new_sensors = {
-                            'cellsCount'+battery_address: {
-                                'state': cellsCount,
-                                'name': f"{name_prefix} {battery_address} - Number of Cells",
-                                'unique_id': f"{name_prefix} {battery_address} - Number of Cells",
-                                'unit': "",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-                            'resCap'+battery_address: {
-                                'state': resCap,
-                                'name': f"{name_prefix} {battery_address} - Residual Capacity",
-                                'unique_id': f"{name_prefix} {battery_address} - Residual Capacity",
-                                'unit': "Ah",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-                            'capacity'+battery_address: {
-                                'state': capacity,
-                                'name': f"{name_prefix} {battery_address} - Capacity",
-                                'unique_id': f"{name_prefix} {battery_address} - Capacity",
-                                'unit': "Ah",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-                            'soc'+battery_address: {
-                                'state': soc,
-                                'name': f"{name_prefix} {battery_address} - State of Charge",
-                                'unique_id': f"{name_prefix} {battery_address} - State of Charge",
-                                'unit': "%",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-                            'ratedCapacity'+battery_address: {
-                                'state': ratedCapacity,
-                                'name': f"{name_prefix} {battery_address} - Rated Capacity",
-                                'unique_id': f"{name_prefix} {battery_address} - Rated Capacity",
-                                'unit': "Ah",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-                            'cycles'+battery_address: {
-                                'state': cycles,
-                                'name': f"{name_prefix} {battery_address} - Cycles",
-                                'unique_id': f"{name_prefix} {battery_address} - Cycles",
-                                'unit': "",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-                            'soh'+battery_address: {
-                                'state': soh,
-                                'name': f"{name_prefix} {battery_address} - State of Health",
-                                'unique_id': f"{name_prefix} {battery_address} - State of Health",
-                                'unit': "%",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            },  
-                            'portVoltage'+battery_address: {
-                                'state': portVoltage,
-                                'name': f"{name_prefix} {battery_address} - Port Voltage",
-                                'unique_id': f"{name_prefix} {battery_address} - Port Voltage",
-                                'unit': "v",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-                                   
-                            'current'+battery_address: {
-                                'state': current,
-                                'name': f"{name_prefix} {battery_address} - Current",
-                                'unique_id': f"{name_prefix} {battery_address} - Current",
-                                'unit': "A",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-                            'voltage'+battery_address: {
-                                'state': voltage,
-                                'name': f"{name_prefix} {battery_address} - Voltage",
-                                'unique_id': f"{name_prefix} {battery_address} - Voltage",
-                                'unit': "v",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-         
-                            'battery_watts'+battery_address: {
-                                'state': int(voltage * current),
-                                'name': f"{name_prefix} {battery_address} - Battery Watts",
-                                'unique_id': f"{name_prefix} {battery_address} - Battery Watts",
-                                'unit': "w",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-                            'full_charge_watts'+battery_address: {
-                                'state': int((capacity - resCap) * nominal_voltage),
-                                'name': f"{name_prefix} {battery_address} - Full Charge Watts",
-                                'unique_id': f"{name_prefix} {battery_address} - Full Charge Watts",
-                                'unit': "w",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-                            'full_charge_amps'+battery_address: {
-                                'state': int((capacity - resCap)),
-                                'name': f"{name_prefix} {battery_address} - Full Charge Amps",
-                                'unique_id': f"{name_prefix} {battery_address} - Full Charge Amps",
-                                'unit': "Ah",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-                            'remaining_watts'+battery_address: {
-                                'state': int(resCap * nominal_voltage),
-                                'name': f"{name_prefix} {battery_address} - Remaining Watts",
-                                'unique_id': f"{name_prefix} {battery_address} - Remaining Watts",
-                                'unit': "w",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-                            'highest_cell_voltage'+battery_address: {
-                                'state': highest_voltage_value,
-                                'name': f"{name_prefix} {battery_address} - Highest Cell Voltage",
-                                'unique_id': f"{name_prefix} {battery_address} - Highest Cell Voltage",
-                                'unit': "mV",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-                            'highest_cell_number'+battery_address: {
-                                'state': highest_voltage_cell_number,
-                                'name': f"{name_prefix} {battery_address} - Cell Number of Highest Voltage",
-                                'unique_id': f"{name_prefix} {battery_address} - Cell Number of Highest Voltage",
-                                'unit': None,
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-                            'lowest_cell_voltage'+battery_address: {
-                                'state': lowest_voltage_value,
-                                'name': f"{name_prefix} {battery_address} - Lowest Cell Voltage",
-                                'unique_id': f"{name_prefix} {battery_address} - Lowest Cell Voltage",
-                                'unit': "mV",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-                            'lowest_cell_number'+battery_address: {
-                                'state': lowest_voltage_cell_number,
-                                'name': f"{name_prefix} {battery_address} - Cell Number of Lowest Voltage",
-                                'unique_id': f"{name_prefix} {battery_address} - Cell Number of Lowest Voltage",
-                                'unit': None,
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-                            'cell_difference'+battery_address: {
-                                'state': cell_difference,
-                                'name': f"{name_prefix} {battery_address} - Cell Voltage Difference",
-                                'unique_id': f"{name_prefix} {battery_address} - Cell Voltage Difference",
-                                'unit': "mV",
-                                'icon': "",
-                                'device_class': "",
-                                'state_class': "",
-                                'attributes': {},
-                                'device_register': DeviceInfo(
-                                            identifiers={("bms_connector", entry.entry_id, battery_address)},
-                                        )
-                            }, 
-
-
-
-                    }
-
-                sensors.update(new_sensors)
                 device_registry.async_get_or_create(
                     config_entry_id=entry.entry_id,
                     identifiers={("bms_connector", entry.entry_id, battery_address)},
                     manufacturer="Seplos BMS",
-                    name=f"Seplos V2: {battery_address}"
+                    name=f"Seplos V2: {battery_address}",
+                    model="Seplos V2 | "+manufacturer_name,
+                    sw_version=software_version,
+                    serial_number=device_name
                 )
 
 
