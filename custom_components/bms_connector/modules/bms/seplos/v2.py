@@ -140,19 +140,30 @@ async def get_battery_pack_identifier_if_normal(response):
 
 
 async def SeplosV2BMSDevice(hass, entry):
+
     async def send_serial_commands(commands, port, baudrate=19200, timeout=2):
         responses = []
-        _LOGGER.debug(commands)
+        _LOGGER.debug("Sending Modbus Commands: %s", commands)
 
         with serial.Serial(port, baudrate=baudrate, timeout=timeout) as ser:
             for command in commands:
                 _LOGGER.debug("Sending Modbus Command: %s", command)
                 ser.write(command.encode())
                 await asyncio.sleep(0.5)
-                responses.append(ser.read(ser.in_waiting).decode().replace('\r', '').replace('\n', ''))
-                _LOGGER.debug("Modbus Responses Received: %s", responses)
-      
-        _LOGGER.debug("Final Modbus Responses Received: %s", responses)
+                response = ser.read(ser.in_waiting)
+                _LOGGER.debug("Raw Response Received: %s", response)
+                try:
+                    # Try to decode if you're sure the response should be text
+                    decoded_response = response.decode().replace('\r', '').replace('\n', '')
+                    responses.append(decoded_response)
+                    _LOGGER.debug("Decoded Response Received: %s", decoded_response)
+
+                except UnicodeDecodeError as e:
+                    _LOGGER.error(f"Error decoding response: {e}")
+                    # Keep the response in binary or convert to hex if necessary
+                    responses.append(response.hex())
+
+        _LOGGER.debug("Complete Modbus Responses Received: %s", responses)
         return responses
 
         
