@@ -146,12 +146,13 @@ async def SeplosV2BMSDevice(hass, entry):
 
         with serial.Serial(port, baudrate=baudrate, timeout=timeout) as ser:
             for command in commands:
-                _LOGGER.debug(command)
+                _LOGGER.debug("Sending Modbus Command: %s", command)
                 ser.write(command.encode())
                 await asyncio.sleep(0.5)
                 responses.append(ser.read(ser.in_waiting).decode().replace('\r', '').replace('\n', ''))
-        _LOGGER.debug(responses)
-
+                _LOGGER.debug("Modbus Responses Received: %s", responses)
+      
+        _LOGGER.debug("Final Modbus Responses Received: %s", responses)
         return responses
 
         
