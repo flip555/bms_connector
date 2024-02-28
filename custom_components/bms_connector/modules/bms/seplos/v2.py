@@ -141,6 +141,29 @@ async def get_battery_pack_identifier_if_normal(response):
 
 async def SeplosV2BMSDevice(hass, entry):
 
+
+    async def read_until_delimiter(ser, delimiter='\r', timeout=0.5):
+        """Read from the serial port until a delimiter is found or timeout."""
+        buffer = ''
+        start_time = time.time()  # Record the start time
+        while True:
+            # Check if the operation has exceeded the timeout
+            if time.time() - start_time > timeout:
+                #raise TimeoutError("Reading from serial timed out")
+                break
+            if ser.in_waiting > 0:
+                data = ser.read(1)
+                if isinstance(data, bytes):
+                    char = data.decode('utf-8')
+                else:
+                    char = data  # This case might not be necessary if ser.read(1) always returns bytes
+                buffer += char
+                if char == delimiter:
+                    break
+            else:
+                await asyncio.sleep(0.01)  # Short sleep to yield control and prevent blocking
+        return buffer
+
     async def send_serial_commands(commands, port, baudrate=19200, timeout=2):
         responses = []
         _LOGGER.debug("Sending Modbus Commands: %s", commands)
@@ -149,19 +172,25 @@ async def SeplosV2BMSDevice(hass, entry):
             for command in commands:
                 _LOGGER.debug("Sending Modbus Command: %s", command)
                 ser.write(command.encode())
-                await asyncio.sleep(0.5)
-                response = ser.read(ser.in_waiting)
+                
+                #await asyncio.sleep(0.5)
+                #response = ser.read(ser.in_waiting)
+                
+                response = await read_until_delimiter(ser, '\r')
+
+
                 _LOGGER.debug("Raw Response Received: %s", response)
                 try:
                     # Try to decode if you're sure the response should be text
-                    decoded_response = response.decode().replace('\r', '').replace('\n', '')
+                    #decoded_response = response.decode().replace('\r', '').replace('\n', '')
+                    decoded_response = response.replace('\r', '').replace('\n', '')
                     responses.append(decoded_response)
                     _LOGGER.debug("Decoded Response Received: %s", decoded_response)
 
                 except UnicodeDecodeError as e:
                     _LOGGER.error(f"Error decoding response: {e}")
                     # Keep the response in binary or convert to hex if necessary
-                    responses.append(response.hex())
+                    #responses.append(response.hex())
 
         _LOGGER.debug("Complete Modbus Responses Received: %s", responses)
         return responses
