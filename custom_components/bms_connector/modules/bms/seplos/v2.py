@@ -50,6 +50,7 @@ async def send_network_command(command, host, port):
         _LOGGER.debug(e)
         return None
 
+
 async def make_async_post_request(url, data, config_entry):
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=data) as response:
@@ -138,18 +139,53 @@ async def get_battery_pack_identifier_if_normal(response):
     else:
         return 999
 
-
 async def SeplosV2BMSDevice(hass, entry):
+    bms_array = {}
 
 
-    async def read_until_delimiter(ser, delimiter='\r', timeout=0.5):
+    async def check_response_cid(response, battery_address):
+        nonlocal bms_array
+        _LOGGER.debug(f"Checking response CID for battery address {battery_address} with response length {len(response)}")
+        if len(response) > 50:
+            if battery_address not in bms_array:
+                _LOGGER.debug(f"Initializing bms_array entry for battery address {battery_address}")
+                bms_array[battery_address] = {"47": {}, "42": {}, "44": {}, "51": {}}
+
+            current_timestamp = datetime.now().isoformat()
+
+            if len(response) > 300:
+                _LOGGER.debug(f"Updating '47' response for battery address {battery_address}")
+                bms_array[battery_address]["47"] = {"response": response, "timestamp": current_timestamp}
+                return "47"
+            elif len(response) > 150:
+                _LOGGER.debug(f"Updating '42' response for battery address {battery_address}")
+                bms_array[battery_address]["42"] = {"response": response, "timestamp": current_timestamp}
+                return "42"
+            elif len(response) > 100:
+                _LOGGER.debug(f"Updating '44' response for battery address {battery_address}")
+                bms_array[battery_address]["44"] = {"response": response, "timestamp": current_timestamp}
+                return "44"
+            elif len(response) > 60:
+                _LOGGER.debug(f"Updating '51' response for battery address {battery_address}")
+                bms_array[battery_address]["51"] = {"response": response, "timestamp": current_timestamp}
+                return "51"
+            else:
+                _LOGGER.debug(f"No CID match for response length {len(response)} for battery address {battery_address}")
+                return "99"
+        else:
+            return "98"
+
+
+
+    async def read_until_delimiter(ser, cid2, battery_address, delimiter='\r', timeout=1):
         """Read from the serial port until a delimiter is found or timeout."""
         buffer = ''
         start_time = time.time()  # Record the start time
+        recheck_count = 0
         while True:
             # Check if the operation has exceeded the timeout
             if time.time() - start_time > timeout:
-                #raise TimeoutError("Reading from serial timed out")
+                _LOGGER.debug("ERROR! Timeout")
                 break
             if ser.in_waiting > 0:
                 data = ser.read(1)
@@ -159,12 +195,35 @@ async def SeplosV2BMSDevice(hass, entry):
                     char = data  # This case might not be necessary if ser.read(1) always returns bytes
                 buffer += char
                 if char == delimiter:
-                    break
+
+                    if buffer.startswith("~"):
+                        buffer_battery_address = buffer[1:]
+                    else:
+                        buffer_battery_address = buffer
+
+                    buffer_battery_address = buffer_battery_address[2:4]
+                    _LOGGER.debug(buffer)
+                    _LOGGER.debug(buffer_battery_address)
+                    if await check_response_cid(buffer, buffer_battery_address) == cid2:
+                        _LOGGER.debug(cid2)
+                        break
+
+                    else:
+                        if (recheck_count > 2):
+                            _LOGGER.debug("ERROR! Exiting Recheck failed")
+                            break
+                        _LOGGER.debug("ERROR! Checking again")
+                        buffer = ''
+                        recheck_count = recheck_count+1
+                        await asyncio.sleep(0.01)  # Short sleep to yield control and prevent blocking
+
+                        
             else:
                 await asyncio.sleep(0.01)  # Short sleep to yield control and prevent blocking
         return buffer
 
-    async def send_serial_commands(commands, port, baudrate=19200, timeout=2):
+
+    async def send_serial_commands(commands, port, battery_address, baudrate=19200, timeout=2):
         responses = []
         _LOGGER.debug("Sending Modbus Commands: %s", commands)
 
@@ -173,10 +232,14 @@ async def SeplosV2BMSDevice(hass, entry):
                 _LOGGER.debug("Sending Modbus Command: %s", command)
                 ser.write(command.encode())
                 
-                #await asyncio.sleep(0.5)
-                #response = ser.read(ser.in_waiting)
-                
-                response = await read_until_delimiter(ser, '\r')
+                if command.startswith("~"):
+                    comm = command[1:]
+                else:
+                    comm = command
+
+                cid2 = comm[6:8]
+
+                response = await read_until_delimiter(ser, cid2, battery_address)
 
 
                 _LOGGER.debug("Raw Response Received: %s", response)
@@ -216,6 +279,7 @@ async def SeplosV2BMSDevice(hass, entry):
         raise ValueError("Invalid communication interface specified")
 
     async def async_update_data():
+        nonlocal bms_array
 
         data_coll = {}
         data_coll['seplos'] = 'ok'
@@ -252,16 +316,32 @@ async def SeplosV2BMSDevice(hass, entry):
         while current_address <= battery_pack_count:
             if (current_address >= 10):
                 battery_address = f"0x{current_address}"
+                current_address_two = current_address
             else:
                 battery_address = f"0x0{current_address}"
+                current_address_two = f"0{current_address}"
 
             commands = V2_COMMAND_ARRAY[battery_address]
-            data = await send_serial_commands(commands, usb_port, baudrate=19200, timeout=2)
+            data = await send_serial_commands(commands, usb_port, battery_address, baudrate=19200, timeout=2)
 
             CID_42_RESPONSE = data[0]
             CID_44_RESPONSE = data[1]
             CID_47_RESPONSE = data[2]
             CID_51_RESPONSE = data[3]
+
+            try:
+                CID_42_RESPONSE = bms_array[current_address_two]["42"]["response"].replace('\r', '').replace('\n', '')
+                CID_44_RESPONSE = bms_array[current_address_two]["44"]["response"].replace('\r', '').replace('\n', '')
+                CID_47_RESPONSE = bms_array[current_address_two]["47"]["response"].replace('\r', '').replace('\n', '')
+                CID_51_RESPONSE = bms_array[current_address_two]["51"]["response"].replace('\r', '').replace('\n', '')
+            except KeyError:
+                # This will catch if any ["42"], ["44"], ["47"], ["51"], or ["response"] keys are missing
+                break
+
+            # Proceed if CID_42_RESPONSE is not empty; otherwise, break
+            if not CID_42_RESPONSE:
+                break
+
 
 
             #if (battery_address == "0x03"):
@@ -300,7 +380,18 @@ async def SeplosV2BMSDevice(hass, entry):
 
 
             current_address += 1
-
+        current_timestamp = datetime.now().isoformat()
+        _LOGGER.debug("BMS Modbus Responses: %s", bms_array)
+        sensors["bms_modbus_responses"] = {
+            'state': current_timestamp,
+            'name': f"BMS Modbus Responses - {usb_port}",
+            'unique_id': f"BMS Modbus Responses - {usb_port}",
+            'unit': "",  # Assuming the unit is Celsius
+            'icon': "",  # Example icon, you can change it
+            'device_class': "",
+            'state_class': "",
+            'attributes': bms_array,
+        }
         return {
             'binary_sensors': binary_sensors,
             'sensors': sensors
