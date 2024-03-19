@@ -36,6 +36,7 @@ async def process_cid_51(CID_51_RESPONSE, battery_address, name_prefix, entry):
         'unit': None,  # Assuming the unit is Celsius
         'icon': "",  # Example icon, you can change it
         'device_class': "",
+        'availability': True,
         'state_class': "",
         'attributes': {},
         'device_register': DeviceInfo(

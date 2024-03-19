@@ -39,6 +39,7 @@ async def process_cid_47(CID_47_RESPONSE, battery_address, name_prefix, entry):
         'icon': "",  # Example icon, you can change it
         'device_class': "",
         'state_class': "",
+        'availability': True,
         'attributes': {},
         'device_register': DeviceInfo(
                     identifiers={("bms_connector", entry.entry_id, battery_address)},

@@ -6,6 +6,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant import config_entries
+from homeassistant.core import callback
+from homeassistant.helpers.entity_registry import (
+    RegistryEntryDisabler,
+    async_entries_for_config_entry,
+    async_get,
+)
 from .const import (
     NAME,
     DOMAIN,
@@ -17,6 +23,7 @@ from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.components.binary_sensor import BinarySensorEntity
 
 _LOGGER = logging.getLogger(__name__)
+
 async def async_setup_entry(hass: HomeAssistantType, config_entry: config_entries.ConfigEntry, async_add_entities: AddEntitiesCallback):
     entry_id = config_entry.entry_id 
     await hass.data[DOMAIN]["HOME_ENERGY_HUB_SENSOR_COORDINATOR"+entry_id].async_refresh() 
@@ -27,6 +34,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: config_entrie
         sensors = []
     all_sensors = sensors
     async_add_entities(all_sensors, True)
+
 
 class CreateSensor(CoordinatorEntity):
     def __init__(self, coordinator, coordinator_key):
@@ -66,7 +74,12 @@ class CreateSensor(CoordinatorEntity):
 
     @property
     def force_update(self):
-        return False
+        return True
+
+    @property
+    def available(self):
+        """Return True if entity is available."""
+        return self.coordinator.data['sensors'][self._coordinator_key]['availability']
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -76,3 +89,4 @@ class CreateSensor(CoordinatorEntity):
                 return self.coordinator.data['sensors'][self._coordinator_key]['device_register']       
         except Exception as ex:
             return None
+

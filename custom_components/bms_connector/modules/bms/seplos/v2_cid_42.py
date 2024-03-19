@@ -177,7 +177,7 @@ async def process_cid_42(CID_42_RESPONSE, battery_address, name_prefix, entry):
                                 )
                     }, 
                            
-                    'current'+battery_address: {
+                    battery_address+'current': {
                         'state': current,
                         'name': f"{name_prefix} {battery_address} - Current",
                         'unique_id': f"{name_prefix} {battery_address} - Current",
@@ -185,13 +185,14 @@ async def process_cid_42(CID_42_RESPONSE, battery_address, name_prefix, entry):
                         'icon': "",
                         'device_class': "",
                         'state_class': "",
+                        'availability': True,
                         'attributes': {},
                         'device_register': DeviceInfo(
                                     identifiers={("bms_connector", entry.entry_id, battery_address)},
                                 )
                     }, 
 
-                    'voltage'+battery_address: {
+                    battery_address+'voltage': {
                         'state': voltage,
                         'name': f"{name_prefix} {battery_address} - Voltage",
                         'unique_id': f"{name_prefix} {battery_address} - Voltage",
@@ -199,6 +200,7 @@ async def process_cid_42(CID_42_RESPONSE, battery_address, name_prefix, entry):
                         'icon': "",
                         'device_class': "",
                         'state_class': "",
+                        'availability': True,
                         'attributes': {},
                         'device_register': DeviceInfo(
                                     identifiers={("bms_connector", entry.entry_id, battery_address)},

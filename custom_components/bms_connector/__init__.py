@@ -43,8 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         elif config_data.get("home_energy_hub_registry") in ["30110"]:
             _LOGGER.debug("Seplos V2 BMS Device Selected..")
-            await SeplosV2BMSDevice(hass, entry)
-        
+            await SeplosV2BMSDevice.create_and_setup(hass, entry)        
 
         # === CONTRIBUTING-ADDON-MARKER:LOGIC-END ===
         else:
