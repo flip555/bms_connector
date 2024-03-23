@@ -67,6 +67,7 @@ class SeplosV2BMSDevice:
         self.writer = None
         self.ha_update_time = entry.data.get("sensor_update_frequency")
         self.usb_port = entry.data.get("usb_port")
+        self.baud_rate = entry.data.get("baud_rate", 19200)
         self.battery_pack_count = entry.data.get("battery_pack_count")
         self.name_prefix = entry.data.get("name_prefix")
         self.comm_type = "usb_serial"
@@ -106,7 +107,7 @@ class SeplosV2BMSDevice:
         """Open serial connection and store reader and writer."""
         try:
             self.reader, self.writer = await serial_asyncio.open_serial_connection(
-                url=self.usb_port, baudrate=19200)
+                url=self.usb_port, baudrate=self.baud_rate)
             _LOGGER.debug(f"Serial port {self.usb_port} opened successfully.")
         except Exception as e:
             _LOGGER.error(f"Failed to open serial port {self.usb_port}: {e}")

@@ -19,6 +19,7 @@ class SeplosConfigFlowMethods:
         # Include dynamic listing of USB ports in the schema
         data_schema = vol.Schema({
             vol.Required("usb_port", default=default_port): vol.In(ports),
+            vol.Required("baud_rate", default=19200): int,
             vol.Required("name_prefix", default="Seplos BMS HA - "): str,
             vol.Required("battery_pack_count", default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
         })
@@ -43,12 +44,14 @@ class SeplosOptionsFlowMethods:
         ports = [port.device for port in list_ports.comports()]
         usb_port = self.config_entry.data.get("usb_port", ports[0] if ports else "/dev/ttyUSB0")  # Fallback or current setting
         name_prefix = self.config_entry.data.get("name_prefix", f"Seplos BMS HA - ")
+        baud_rate = self.config_entry.data.get("baud_rate", 19200)
         sensor_update_frequency = self.config_entry.data.get("sensor_update_frequency", 5)
 
         return self.async_show_form(
             step_id="seplos_options_bms_v2",
             data_schema=vol.Schema({
                 vol.Required("usb_port", default=usb_port): vol.In(ports),
+                vol.Required("baud_rate", default=baud_rate): int,
                 vol.Required("name_prefix", default=name_prefix): str,
                 vol.Required("battery_pack_count", default=battery_pack_count): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
                 vol.Required("sensor_update_frequency", default=sensor_update_frequency): int,

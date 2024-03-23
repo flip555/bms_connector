@@ -25,6 +25,7 @@
                 "description": "Please select the connection port and select the number of battery packs are attached to your BMS.",
                 "data": {
                     "usb_port": "USB Serial Port",
+                    "baud_rate": "Serial Baud Rate",
                     "battery_address": "Battery Address",
                     "name_prefix": "Please enter your desired sensor prefix",
                     "battery_pack_count": "Number of Battery Packs",
@@ -81,7 +82,8 @@
                     "battery_address": "Battery Address",
                     "name_prefix": "Entity Name Prefix **CHANGING THIS WILL RENAME ENTITIES**",
                     "battery_pack_count": "Number of Battery Packs",
-                    "sensor_update_frequency": "Update Frequency (s)"
+                    "sensor_update_frequency": "Update Frequency (s)",
+                    "baud_rate": "Serial Baud Rate"
                 }
             }
         }
