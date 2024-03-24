@@ -120,7 +120,7 @@ class SeplosV2BMSDevice:
         try:
             while True:
                 line = await self.reader.readuntil(separator=b'\r')
-                decoded_line = line.decode('utf-8').rstrip('\r')
+                decoded_line = line.decode('utf-8', 'ignore').rstrip('\r')
                 self.latest_data = decoded_line
                 _LOGGER.debug(f"Received from serial: {self.latest_data}")
 
@@ -198,12 +198,15 @@ class SeplosV2BMSDevice:
                 battery_address = f"0x0{current_address}"
                 current_address_two = f"0{current_address}"
 
-            current_address += 1
 
             commands = V2_COMMAND_ARRAY[battery_address]
-            for command in commands:
-                await self.send_command(command)
-                await asyncio.sleep(0.5) 
+            if current_address == 0:
+                for command in commands:
+                    await self.send_command(command)
+                    await asyncio.sleep(0.5) 
+
+
+            current_address += 1
 
         _LOGGER.debug(f"Latest Modbus Data: {self.bms_array}")
         sensors = {}
@@ -211,36 +214,53 @@ class SeplosV2BMSDevice:
 
             battery_number = "0x"+battery_pack
 
-            if '42' in self.bms_array[battery_pack]:
+            if '42' in self.bms_array[battery_pack] and 'response' in self.bms_array[battery_pack]['42'] and self.bms_array[battery_pack]['42']['response'] is not False:
                 _LOGGER.debug(f"{battery_pack} - Latest Modbus 42 Data: {self.bms_array[battery_pack]['42']}")
-                CID_42_SENSORS, lowest_voltage_value, highest_voltage_value, cellsCount, cellVoltage = await process_cid_42(self.bms_array[battery_pack]['42']['response'], '0x'+battery_pack, self.name_prefix, self.entry)
-                self.sensors.update(CID_42_SENSORS)
+                try:
+                    CID_42_SENSORS, lowest_voltage_value, highest_voltage_value, cellsCount, cellVoltage = await process_cid_42(self.bms_array[battery_pack]['42']['response'], '0x'+battery_pack, self.name_prefix, self.entry)
+                    self.sensors.update(CID_42_SENSORS)
+                except Exception as e:
+                    _LOGGER.error(f"Error processing Modbus 47 Data for {battery_pack}: {e}")
 
-            if '44' in self.bms_array[battery_pack]:
-                _LOGGER.debug(f"{battery_pack} - Latest Modbus 44 Data: {self.bms_array[battery_pack]['44']}")
-                CID_44_SENSORS, CID_44_BINARY_SENSORS = await process_cid_44(self.bms_array[battery_pack]['44']['response'], '0x'+battery_pack, self.name_prefix, self.entry, lowest_voltage_value, highest_voltage_value, cellsCount, cellVoltage)
-                self.sensors.update(CID_44_SENSORS)
-                self.binary_sensors.update(CID_44_BINARY_SENSORS)
+            if ('44' in self.bms_array[battery_pack] and 
+                'response' in self.bms_array[battery_pack]['44'] and 
+                lowest_voltage_value is not False and 
+                highest_voltage_value is not False and 
+                cellsCount is not False and 
+                cellVoltage is not False):
+                    _LOGGER.debug(f"{battery_pack} - Latest Modbus 44 Data: {self.bms_array[battery_pack]['44']}")
+                    try:
+                        CID_44_SENSORS, CID_44_BINARY_SENSORS = await process_cid_44(self.bms_array[battery_pack]['44']['response'], '0x'+battery_pack, self.name_prefix, self.entry, lowest_voltage_value, highest_voltage_value, cellsCount, cellVoltage)
+                        self.sensors.update(CID_44_SENSORS)
+                        self.binary_sensors.update(CID_44_BINARY_SENSORS)
+                    except Exception as e:
+                        _LOGGER.error(f"Error processing Modbus 51 Data for {battery_pack}: {e}")
 
-            if '47' in self.bms_array[battery_pack]:
+            if '47' in self.bms_array[battery_pack] and 'response' in self.bms_array[battery_pack]['47']:
                 _LOGGER.debug(f"{battery_pack} - Latest Modbus 47 Data: {self.bms_array[battery_pack]['47']}")
-                CID_47_SENSORS = await process_cid_47(self.bms_array[battery_pack]['47']['response'], '0x'+battery_pack, self.name_prefix, self.entry)
-                self.sensors.update(CID_47_SENSORS)
+                try:
+                    CID_47_SENSORS = await process_cid_47(self.bms_array[battery_pack]['47']['response'], '0x'+battery_pack, self.name_prefix, self.entry)
+                    self.sensors.update(CID_47_SENSORS)
+                except Exception as e:
+                    _LOGGER.error(f"Error processing Modbus 47 Data for {battery_pack}: {e}")
 
-            if '51' in self.bms_array[battery_pack]:
+            if '51' in self.bms_array[battery_pack] and 'response' in self.bms_array[battery_pack]['51']:
                 _LOGGER.debug(f"{battery_pack} - Latest Modbus 51 Data: {self.bms_array[battery_pack]['51']}")
-                CID_51_SENSORS, manufacturer_name, software_version, device_name = await process_cid_51(self.bms_array[battery_pack]['51']['response'], '0x'+battery_pack, self.name_prefix, self.entry)
-                if manufacturer_name:
-                    self.device_registry.async_get_or_create(
-                        config_entry_id=self.entry.entry_id,
-                        identifiers={("bms_connector", self.entry.entry_id, battery_number)},
-                        manufacturer="Seplos BMS",
-                        name=f"Seplos V2: {battery_number}",
-                        model="Seplos V2 | "+manufacturer_name,
-                        sw_version=software_version,
-                        serial_number=device_name
-                    )
-                self.sensors.update(CID_51_SENSORS)
+                try:
+                    CID_51_SENSORS, manufacturer_name, software_version, device_name = await process_cid_51(self.bms_array[battery_pack]['51']['response'], '0x'+battery_pack, self.name_prefix, self.entry)
+                    if manufacturer_name:
+                        self.device_registry.async_get_or_create(
+                            config_entry_id=self.entry.entry_id,
+                            identifiers={("bms_connector", self.entry.entry_id, battery_number)},
+                            manufacturer="Seplos BMS",
+                            name=f"Seplos V2: {battery_number}",
+                            model="Seplos V2 | " + manufacturer_name,
+                            sw_version=software_version,
+                            serial_number=device_name
+                        )
+                    self.sensors.update(CID_51_SENSORS)
+                except Exception as e:
+                    _LOGGER.error(f"Error processing Modbus 51 Data for {battery_pack}: {e}")
 
         ##########################################################################################################################################
         #
@@ -357,7 +377,20 @@ class SeplosV2BMSDevice:
                     name=f"Seplos V2: {battery_number}"
                 )
 
-        _LOGGER.debug(f"self.sensors: {self.sensors}")
+        self.sensors["rawmodbus"] = {
+            'state': 0,
+            'name': f"{self.name_prefix} Sorted Modbus",
+            'unique_id': f"{self.name_prefix} Sorted Modbus",
+            'unit': None,
+            'icon': "",
+            'device_class': "",
+            'state_class': "",
+            'availability': True,
+            'attributes': {
+                'modbus': self.bms_array
+            }
+        }
+        _LOGGER.debug(f"BMS Array: {self.bms_array}")
 
         return {
             'binary_sensors': self.binary_sensors,

@@ -21,13 +21,13 @@ async def process_cid_51(CID_51_RESPONSE, battery_address, name_prefix, entry):
     manufacturer_name_bytes = hex_string[12:24]
 
     # Convert bytes to ASCII strings
-    device_name = device_name_bytes.decode('ascii')
+    device_name = device_name_bytes.decode('ascii', 'replace')
     
     # Interpret the software version correctly
     software_version = int.from_bytes(software_version_bytes, byteorder='big') / 1000 * 4  # Really unsure if this is correct ... my version is 16.4 so * 4 made 4.1 16.4
     software_version = "{:.1f}".format(software_version)
 
-    manufacturer_name = manufacturer_name_bytes.decode('ascii')
+    manufacturer_name = manufacturer_name_bytes.decode('ascii', 'replace')
 
     sensors["bms_"+battery_address+"device_name"] = {
         'state': device_name,
@@ -50,6 +50,7 @@ async def process_cid_51(CID_51_RESPONSE, battery_address, name_prefix, entry):
         'unit': None,  # Assuming the unit is Celsius
         'icon': "",  # Example icon, you can change it
         'device_class': "",
+        'availability': True,
         'state_class': "",
         'attributes': {},
         'device_register': DeviceInfo(
@@ -63,6 +64,7 @@ async def process_cid_51(CID_51_RESPONSE, battery_address, name_prefix, entry):
         'unit': None,  # Assuming the unit is Celsius
         'icon': "",  # Example icon, you can change it
         'device_class': "",
+        'availability': True,
         'state_class': "",
         'attributes': {},
         'device_register': DeviceInfo(
