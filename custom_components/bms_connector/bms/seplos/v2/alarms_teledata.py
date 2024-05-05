@@ -71,7 +71,7 @@ def parse_teledata_info(info_str):
         result.tempAlarm.append(int(info_str[cursor:cursor+2], 16))
         cursor += 2
 
-    for attribute in ['currentAlarm', 'voltageAlarm', 'customAlarms', 'alarmEvent0', 'alarmEvent1', 'alarmEvent2', 'alarmEvent3', 'alarmEvent4', 'alarmEvent5', 'onOffState', 'equilibriumState0', 'equilibriumState1', 'systemState', 'disconnectionState0', 'disconnectionState1', 'alarmEvent6', 'alarmEvent7']:
+    for attribute in ['currentAlarm', 'voltageAlarm', 'customAlarms', 'alarmEvent1', 'alarmEvent2', 'alarmEvent3', 'alarmEvent4', 'alarmEvent5', 'alarmEvent6', 'onOffState', 'equilibriumState0', 'equilibriumState1', 'systemState', 'disconnectionState0', 'disconnectionState1', 'alarmEvent7', 'alarmEvent8']:
         if remaining_length() < 2:
             return result
         setattr(result, attribute, int(info_str[cursor:cursor+2], 16))
