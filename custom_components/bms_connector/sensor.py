@@ -20,7 +20,7 @@ coordinator = None  # Define coordinator at a higher scope
 async def initialize_bms_component(hass, config_entry):
     pass
 
-async def async_setup_entry(hass: HomeAssistantType, config_entry: config_entries.ConfigEntry, async_add_entities: AddEntitiesCallback):
+async def async_setup_entry(hass: HomeAssistant, config_entry: config_entries.ConfigEntry, async_add_entities: AddEntitiesCallback):
     try:
         sensor_prefix = config_entry.data.get("sensor_prefix")
         bms_type = config_entry.data.get("bms_type")

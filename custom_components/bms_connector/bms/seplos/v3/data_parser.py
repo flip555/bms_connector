@@ -9,7 +9,7 @@ _LOGGER = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def modbus_crc(data: bytes) -> bytes:
-    """Calcule le CRC Modbus RTU (little-endian, 2 bytes)."""
+    """Calculate the Modbus RTU CRC (little-endian, 2 bytes)."""
     crc = 0xFFFF
     for byte in data:
         crc ^= byte

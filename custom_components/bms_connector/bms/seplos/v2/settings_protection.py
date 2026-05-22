@@ -191,10 +191,10 @@ def decode_fourseven(hex_string):
     if len(hex_string) < 10:
         return None, None, None
 
-    soi = hex_string[0]
-    ver = hex_string[1]
-    adr = hex_string[2]
-    infoflag = hex_string[3]
+    _soi = hex_string[0]
+    _ver = hex_string[1]
+    _adr = hex_string[2]
+    _infoflag = hex_string[3]
     
     # Extract length correctly
     length = int.from_bytes(hex_string[4:6], byteorder='big')
@@ -204,8 +204,8 @@ def decode_fourseven(hex_string):
     datai_end = datai_start + length
     datai_bytes = hex_string[datai_start:datai_end]
     
-    chksum = hex_string[-4:-2]
-    eoi = hex_string[-2]
+    _chksum = hex_string[-4:-2]
+    _eoi = hex_string[-2]
 
 
     # Convert DATAI to human-readable format

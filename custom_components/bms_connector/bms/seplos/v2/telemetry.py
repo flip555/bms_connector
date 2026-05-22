@@ -41,13 +41,13 @@ def parse_telemetry_info(info_str):
 
     result.cellsCount = int(info_str[cursor:cursor+2], 16)
     cursor += 2
-    for i in range(result.cellsCount):
+    for _ in range(result.cellsCount):
         result.cellVoltage.append(int(info_str[cursor:cursor+4], 16))
         cursor += 4
 
     result.tempCount = int(info_str[cursor:cursor+2], 16)
     cursor += 2
-    for i in range(result.tempCount):
+    for _ in range(result.tempCount):
         temperature = (int(info_str[cursor:cursor+4], 16) - 2731) / 10
         result.temperatures.append(temperature)
         cursor += 4

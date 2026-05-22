@@ -76,41 +76,41 @@ def lowest_cell_voltage(data):
     return get_cell_extremes_and_difference(data)[1]
 
 def cell_voltage_difference(data):
-    telemetry = extract_data(data)
+    _ = extract_data(data)
     return get_cell_extremes_and_difference(data)[2]
 
 def highest_cell_number(data):
-    telemetry = extract_data(data)
+    _ = extract_data(data)
     return get_cell_extremes_and_difference(data)[3]
 
 def lowest_cell_number(data):
-    telemetry = extract_data(data)
+    _ = extract_data(data)
     return get_cell_extremes_and_difference(data)[4]
 
 def highest_temp(data):
-    telemetry = extract_data(data)
+    _ = extract_data(data)
     return max(getattr(telemetry, 'temperatures', [0.0]))
 
 def lowest_temp(data):
-    telemetry = extract_data(data)
+    _ = extract_data(data)
     return min(getattr(telemetry, 'temperatures', [0.0]))
 
 def delta_temp(data):
-    telemetry = extract_data(data)
+    _ = extract_data(data)
     temps = getattr(telemetry, 'temperatures', [])
     if temps:
         return max(temps) - min(temps)
     return 0.0
 
 def highest_temp_sensor(data):
-    telemetry = extract_data(data)
+    _ = extract_data(data)
     temps = getattr(telemetry, 'temperatures', [])
     if temps:
         return f"Sensor {temps.index(max(temps)) + 1}"
     return "N/A"
 
 def lowest_temp_sensor(data):
-    telemetry = extract_data(data)
+    _ = extract_data(data)
     temps = getattr(telemetry, 'temperatures', [])
     if temps:
         return f"Sensor {temps.index(min(temps)) + 1}"
