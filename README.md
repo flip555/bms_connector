@@ -96,6 +96,16 @@ When reporting issues, please be as descriptive as possible. Provide the steps t
 
 Thank you for your collaboration and contribution!
 
+## 🙏 Acknowledgments
+
+Special thanks to **Christian F5UII** ([@f5uii](https://github.com/f5uii)) for the substantial Seplos BMS V3 implementation, including:
+- Complete Modbus RTU protocol support with CRC validation
+- Multiple battery pack addressing
+- Robust serial communication with frame validation
+- PIA/PIB register parsing
+
+His contributions made V3 support possible.
+
 ## 🆘 Support
 Encountering an issue or need assistance? Don't hesitate to open an issue on the [GitHub repository](https://github.com/f5uii/bms_connector/issues).
 
