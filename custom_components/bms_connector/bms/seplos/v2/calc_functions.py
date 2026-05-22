@@ -26,7 +26,7 @@ def battery_watts(data):
     telemetry = extract_data(data)
     volts = getattr(telemetry, 'portVoltage', 0.0)
     amps = getattr(telemetry, 'current', 0.0)
-    if isinstance(volts, (float, int)) and isinstance(amps, (float, int)):
+    if isinstance(volts, float | int) and isinstance(amps, float | int):
         return volts * amps
     return 0.0  # Handle the case when volts or amps are not numeric values
 
@@ -68,49 +68,46 @@ def get_cell_extremes_and_difference(data):
     return highest_cell_voltage, lowest_cell_voltage, difference, highest_cell_number, lowest_cell_number
 
 def highest_cell_voltage(data):
-    telemetry = extract_data(data)
     return get_cell_extremes_and_difference(data)[0]
 
 def lowest_cell_voltage(data):
-    telemetry = extract_data(data)
     return get_cell_extremes_and_difference(data)[1]
 
 def cell_voltage_difference(data):
-    _ = extract_data(data)
     return get_cell_extremes_and_difference(data)[2]
 
 def highest_cell_number(data):
-    _ = extract_data(data)
     return get_cell_extremes_and_difference(data)[3]
 
 def lowest_cell_number(data):
-    _ = extract_data(data)
     return get_cell_extremes_and_difference(data)[4]
 
 def highest_temp(data):
-    _ = extract_data(data)
+    telemetry = extract_data(data)
     return max(getattr(telemetry, 'temperatures', [0.0]))
 
 def lowest_temp(data):
-    _ = extract_data(data)
+    telemetry = extract_data(data)
     return min(getattr(telemetry, 'temperatures', [0.0]))
 
 def delta_temp(data):
-    _ = extract_data(data)
+    telemetry = extract_data(data)
     temps = getattr(telemetry, 'temperatures', [])
     if temps:
         return max(temps) - min(temps)
     return 0.0
 
 def highest_temp_sensor(data):
-    _ = extract_data(data)
+    telemetry = extract_data(data)
+    telemetry = extract_data(data)
     temps = getattr(telemetry, 'temperatures', [])
     if temps:
         return f"Sensor {temps.index(max(temps)) + 1}"
     return "N/A"
 
 def lowest_temp_sensor(data):
-    _ = extract_data(data)
+    telemetry = extract_data(data)
+    telemetry = extract_data(data)
     temps = getattr(telemetry, 'temperatures', [])
     if temps:
         return f"Sensor {temps.index(min(temps)) + 1}"

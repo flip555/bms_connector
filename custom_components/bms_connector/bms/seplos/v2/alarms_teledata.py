@@ -57,7 +57,7 @@ def parse_teledata_info(info_str):
     result.cellsCount = int(info_str[cursor:cursor+2], 16)
 
     cursor += 2
-    for i in range(result.cellsCount):
+    for _ in range(result.cellsCount):
         if remaining_length() < 2:
             return result
         result.cellAlarm.append(int(info_str[cursor:cursor+2], 16))
@@ -65,7 +65,7 @@ def parse_teledata_info(info_str):
 
     result.tempCount = int(info_str[cursor:cursor+2], 16)
     cursor += 2
-    for i in range(result.tempCount):
+    for _ in range(result.tempCount):
         if remaining_length() < 2:
             return result
         result.tempAlarm.append(int(info_str[cursor:cursor+2], 16))
