@@ -1,12 +1,12 @@
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from ....connector.local_serial.local_serial import send_serial_command
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
 from .data_parser import extract_data_from_message
+from ....connector import get_serial_send_function
 import asyncio
 import logging
 from datetime import timedelta
@@ -61,7 +61,7 @@ from .calc_functions import (
 _LOGGER = logging.getLogger(__name__)
 
 # Define the generate_sensors function
-async def generate_sensors(hass, bms_type, port, config_battery_address, sensor_prefix, entry_id, async_add_entities):
+async def generate_sensors(hass, bms_type, connector_info, config_battery_address, sensor_prefix, entry_id, async_add_entities):
     class DerivedSeplosBMSSensor(SeplosBMSSensorBase):
         def __init__(self, *args, **kwargs):
             self._calc_function = kwargs.pop("calc_function", None)
@@ -96,7 +96,8 @@ async def generate_sensors(hass, bms_type, port, config_battery_address, sensor_
         _LOGGER.debug("BATTERY PACK SELECTED: %s", config_battery_address)
         commands = V2_COMMAND_ARRAY[config_battery_address]
 
-        telemetry_data_str = await hass.async_add_executor_job(send_serial_command, commands, port)
+        send_func, send_kwargs = get_serial_send_function(connector_info)
+        telemetry_data_str = await hass.async_add_executor_job(send_func, commands, **send_kwargs)
         battery_address, telemetry, alarms, system_details, protection_settings = extract_data_from_message(telemetry_data_str, True, True, True)
         if battery_address != config_battery_address: 
             _LOGGER.debug("Battery Pack: %s was not found. %s found instead. Skipping", config_battery_address, battery_address)

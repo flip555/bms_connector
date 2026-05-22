@@ -1,12 +1,12 @@
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from ....connector.local_serial.seplos_v3_local_serial import send_serial_command
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 
 from .data_parser import extract_data_from_message, build_commands_for_address
+from ....connector import get_serial_send_function
 import asyncio
 import logging
 from datetime import timedelta
@@ -34,7 +34,7 @@ _MISSING = object()
 # generate_sensors
 # ---------------------------------------------------------------------------
 
-async def generate_sensors(hass, bms_type, port, config_battery_address,
+async def generate_sensors(hass, bms_type, connector_info, config_battery_address,
                             sensor_prefix, entry_id, async_add_entities):
     """
     Génère et enregistre tous les capteurs pour UNE adresse de batterie.
@@ -97,8 +97,9 @@ async def generate_sensors(hass, bms_type, port, config_battery_address,
         )
 
         # Envoi série (bloquant, exécuté dans un thread executor)
+        send_func, send_kwargs = get_serial_send_function(connector_info)
         telemetry_data_str = await hass.async_add_executor_job(
-            send_serial_command, commands, port
+            send_func, commands, **send_kwargs
         )
 
         # Parsing des réponses
