@@ -97,9 +97,9 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         )
 
         # Envoi série (bloquant, exécuté dans un thread executor)
-        send_func, send_kwargs = get_serial_send_function(connector_info)
+        send_func = get_serial_send_function(connector_info)
         telemetry_data_str = await hass.async_add_executor_job(
-            send_func, commands, **send_kwargs
+            send_func, commands
         )
 
         # Parsing des réponses

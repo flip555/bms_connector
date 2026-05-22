@@ -96,8 +96,8 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         _LOGGER.debug("BATTERY PACK SELECTED: %s", config_battery_address)
         commands = V2_COMMAND_ARRAY[config_battery_address]
 
-        send_func, send_kwargs = get_serial_send_function(connector_info)
-        telemetry_data_str = await hass.async_add_executor_job(send_func, commands, **send_kwargs)
+        send_func = get_serial_send_function(connector_info)
+        telemetry_data_str = await hass.async_add_executor_job(send_func, commands)
         battery_address, telemetry, alarms, system_details, protection_settings = extract_data_from_message(telemetry_data_str, True, True, True)
         if battery_address != config_battery_address: 
             _LOGGER.debug("Battery Pack: %s was not found. %s found instead. Skipping", config_battery_address, battery_address)
