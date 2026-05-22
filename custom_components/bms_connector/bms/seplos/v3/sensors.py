@@ -4,6 +4,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
+from homeassistant.helpers.entity import DeviceInfo
 
 from .data_parser import extract_data_from_message, build_commands_for_address
 from ....connector import get_serial_send_function
@@ -294,6 +295,16 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         self._icon = icon
         self._battery_address = battery_address
         self._sensor_prefix = sensor_prefix
+        self._entry_id = entry_id
+        
+        # Device info for V3 BMS
+        self._attr_device_info = DeviceInfo(
+            identifiers={("bms_connector", f"seplos_v3_{entry_id}")},
+            name=f"{sensor_prefix}",
+            manufacturer="Seplos",
+            model="V3 BMS",
+            sw_version="Unknown",
+        )
         self._entry_id = entry_id
 
     @property
