@@ -7,15 +7,8 @@ class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
-        if user_input is not None:
-            return await self.async_step_bms_type()
-
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema({
-                vol.Required("confirm", description="I confirm"): bool,
-            }),
-        )
+        """Skip confirmation, go straight to BMS type selection."""
+        return await self.async_step_bms_type()
 
     async def async_step_bms_type(self, user_input=None):
         if user_input is not None:
