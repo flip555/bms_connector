@@ -26,7 +26,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: config_entrie
         bms_type = config_entry.data.get("bms_type")
         port = config_entry.data.get("connector_port")
         battery_address = config_entry.data.get("battery_address")
-        entry = config_entry.data
+        entry_id = config_entry.entry_id
 
         _LOGGER.debug("Sensor Prefix: %s", sensor_prefix)
         _LOGGER.debug("BMS Type: %s", bms_type)
@@ -40,12 +40,12 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: config_entrie
         # For SEPLV2 BMS's
         if bms_type == "SEPLV2":
             _LOGGER.debug("%s selected. Routing now..", bms_type)
-            await SEPLOS_V2_START(hass, bms_type, port, battery_address, sensor_prefix, entry, async_add_entities)
+            await SEPLOS_V2_START(hass, bms_type, port, battery_address, sensor_prefix, entry_id, async_add_entities)
 
         # For SEPLV3 BMS's
         elif bms_type == "SEPLV3":
             _LOGGER.debug("%s selected. Routing now..", bms_type)
-            await SEPLOS_V3_START(hass, bms_type, port, battery_address, sensor_prefix, entry, async_add_entities)
+            await SEPLOS_V3_START(hass, bms_type, port, battery_address, sensor_prefix, entry_id, async_add_entities)
 
         else:
             _LOGGER.error("Unsupported BMS type")
