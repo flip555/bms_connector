@@ -1,3 +1,10 @@
+"""
+Modbus RTU response parser for Seplos BMS V3 (PIA / PIB tables).
+
+PIA  — registers 0x1000–0x1011 (18 regs) — pack-level data
+PIB  — registers 0x1100–0x1119 (26 regs) — cell voltages + temperatures
+"""
+
 import struct
 import logging
 
@@ -5,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# CRC Modbus RTU
+# CRC-16 Modbus
 # ---------------------------------------------------------------------------
 
 def modbus_crc(data: bytes) -> bytes:
@@ -22,7 +29,7 @@ def modbus_crc(data: bytes) -> bytes:
 
 
 def verify_crc(frame_hex: str) -> bool:
-    """Vérifie le CRC d'une trame Modbus reçue (format hex string)."""
+    """Validate CRC for an entire Modbus frame given as hex string."""
     try:
         raw = bytes.fromhex(frame_hex)
         if len(raw) < 4:
@@ -36,20 +43,20 @@ def verify_crc(frame_hex: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Construction des commandes Modbus RTU
+# Command construction
 # ---------------------------------------------------------------------------
 
 def build_read_command(addr: int, register: int, count: int) -> str:
     """
-    Construit une commande Modbus RTU 0x04 (Read Input Registers).
+    Build a Modbus RTU 0x04 (Read Input Registers) command with CRC.
 
     Args:
-        addr:     Adresse esclave (0x01 à 0x7F pour un BMS SEPLOS)
-        register: Adresse de début du registre (ex: 0x1000 pour PIA)
-        count:    Nombre de registres à lire
+        addr:     Slave address (0x01–0x7F).
+        register: Start register address (e.g. 0x1000 for PIA).
+        count:    Number of registers to read.
 
     Returns:
-        Trame complète en hex string (sans espaces), CRC inclus.
+        Complete command as a hex string (without spaces), CRC included.
     """
     payload = bytes([addr, 0x04]) + struct.pack('>HH', register, count)
     crc = modbus_crc(payload)
@@ -61,10 +68,10 @@ def build_read_command(addr: int, register: int, count: int) -> str:
 
 def build_commands_for_address(battery_addr: int) -> list:
     """
-    Retourne la liste des commandes PIA + PIB pour une adresse de batterie donnée.
+    Build PIA and PIB commands for a given battery address.
 
-    PIA : registre 0x1000, 18 registres (0x12) — données pack global
-    PIB : registre 0x1100, 26 registres (0x1A) — tensions cellules + températures
+    PIA : register 0x1000, 18 registers  (0x12) — pack data
+    PIB : register 0x1100, 26 registers  (0x1A) — cell voltages + temps
     """
     cmd_pia = build_read_command(battery_addr, 0x1000, 0x12)
     cmd_pib = build_read_command(battery_addr, 0x1100, 0x1A)
@@ -74,17 +81,17 @@ def build_commands_for_address(battery_addr: int) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Conversion de types Modbus
+# Type conversion
 # ---------------------------------------------------------------------------
 
 def convert_bytes_to_data(data_type: str, byte1: int, byte2: int):
     """
-    Convertit deux bytes en valeur typée.
+    Convert two bytes (MSB, LSB) to a typed value.
 
     Args:
-        data_type: "UINT16" ou "INT16"
-        byte1:     Byte de poids fort (MSB)
-        byte2:     Byte de poids faible (LSB)
+        data_type: "UINT16" or "INT16"
+        byte1:     Most-significant byte.
+        byte2:     Least-significant byte.
     """
     if data_type == "UINT16":
         return (byte1 << 8) | byte2
@@ -97,29 +104,29 @@ def convert_bytes_to_data(data_type: str, byte1: int, byte2: int):
 
 
 # ---------------------------------------------------------------------------
-# Structures de données
+# Data classes
 # ---------------------------------------------------------------------------
 
 class V3PIATableData:
-    """Données Pack Info A : informations générales du pack batterie."""
+    """Pack Info A — general battery pack data."""
 
     def __init__(self):
-        self.pack_voltage = 0            # V
-        self.current = 0                 # A  (négatif = décharge)
-        self.remaining_capacity = 0      # Ah
-        self.total_capacity = 0          # Ah
-        self.total_discharge_capacity = 0  # Ah  (cumulatif)
-        self.soc = 0                     # %
-        self.soh = 0                     # %
-        self.cycle = 0                   # nombre de cycles
-        self.avg_cell_voltage = 0        # V
-        self.avg_cell_temperature = 0    # °C
-        self.max_cell_voltage = 0        # V
-        self.min_cell_voltage = 0        # V
-        self.max_cell_temperature = 0    # °C
-        self.min_cell_temperature = 0    # °C
-        self.max_discharge_current = 0   # A
-        self.max_charge_current = 0      # A
+        self.pack_voltage = 0                # V
+        self.current = 0                     # A  (negative = discharge)
+        self.remaining_capacity = 0          # Ah
+        self.total_capacity = 0              # Ah
+        self.total_discharge_capacity = 0    # Ah  (cumulative)
+        self.soc = 0                         # %
+        self.soh = 0                         # %
+        self.cycle = 0                       # cycles
+        self.avg_cell_voltage = 0            # V
+        self.avg_cell_temperature = 0        # °C
+        self.max_cell_voltage = 0            # V
+        self.min_cell_voltage = 0            # V
+        self.max_cell_temperature = 0        # °C
+        self.min_cell_temperature = 0        # °C
+        self.max_discharge_current = 0       # A
+        self.max_charge_current = 0          # A
 
     def __str__(self):
         return (
@@ -139,10 +146,10 @@ class V3PIATableData:
 
 
 class V3PIBTableData:
-    """Données Pack Info B : tensions des cellules et températures."""
+    """Pack Info B — cell voltages and temperatures."""
 
     def __init__(self):
-        # Tensions cellules (V)
+        # Cell voltages (V)
         self.cell1_voltage = 0
         self.cell2_voltage = 0
         self.cell3_voltage = 0
@@ -159,12 +166,12 @@ class V3PIBTableData:
         self.cell14_voltage = 0
         self.cell15_voltage = 0
         self.cell16_voltage = 0
-        # Températures cellules (°C)
+        # Cell temperatures (°C)
         self.cell_temperature_1 = 0
         self.cell_temperature_2 = 0
         self.cell_temperature_3 = 0
         self.cell_temperature_4 = 0
-        # Températures environnement (°C)
+        # Environment temperatures (°C)
         self.environment_temperature = 0
         self.power_temperature = 0
 
@@ -185,52 +192,48 @@ class V3PIBTableData:
 
 
 # ---------------------------------------------------------------------------
-# Décodage PIA
+# PIA decoding
 # ---------------------------------------------------------------------------
 
 def decode_pia_table(response: str):
     """
-    Décode la réponse Modbus à la commande PIA (registres 0x1000–0x1011).
+    Decode the Modbus response to a PIA command (registers 0x1000–0x1011).
 
-    Structure de la réponse :
-        Byte 0   : ADDR  (adresse esclave)
-        Byte 1   : CMD   (0x04)
-        Byte 2   : LEN   (nombre de bytes de données = 2 × nb_registres)
-        Bytes 3…N: DATA  (valeurs des registres, MSB en premier)
-        Bytes -2 : CRC   (2 bytes, little-endian, à retirer)
+    Frame layout:
+        [addr, 0x04, LEN, DATA..., CRC_lo, CRC_hi]
 
-    Registres PIA (spec Modbus SEPLOS V3) :
-        0x1000  pack_voltage              UINT16  10mV   → × 0.01  → V
-        0x1001  current                   INT16   10mA   → × 0.01  → A
-        0x1002  remaining_capacity        UINT16  10mAh  → × 0.01  → Ah
-        0x1003  total_capacity            UINT16  10mAh  → × 0.01  → Ah
-        0x1004  total_discharge_capacity  UINT16  10Ah   → × 10    → Ah
-        0x1005  soc                       UINT16  0.1%   → × 0.1   → %
-        0x1006  soh                       UINT16  0.1%   → × 0.1   → %
-        0x1007  cycle                     UINT16  1
-        0x1008  avg_cell_voltage          UINT16  1mV    → × 0.001 → V
-        0x1009  avg_cell_temperature      UINT16  0.1K   → × 0.1 − 273.15 → °C
-        0x100A  max_cell_voltage          UINT16  1mV    → × 0.001 → V
-        0x100B  min_cell_voltage          UINT16  1mV    → × 0.001 → V
-        0x100C  max_cell_temperature      UINT16  0.1K   → × 0.1 − 273.15 → °C
-        0x100D  min_cell_temperature      UINT16  0.1K   → × 0.1 − 273.15 → °C
-        0x100E  (réservé)
-        0x100F  max_discharge_current     UINT16  1A
-        0x1010  max_charge_current        UINT16  1A
-        0x1011  (réservé)
+    Register layout (per Seplos V3 Modbus spec):
+        0x1000  pack_voltage             UINT16  10mV    → × 0.01   → V
+        0x1001  current                  INT16   10mA    → × 0.01   → A
+        0x1002  remaining_capacity       UINT16  10mAh   → × 0.01   → Ah
+        0x1003  total_capacity           UINT16  10mAh   → × 0.01   → Ah
+        0x1004  total_discharge_capacity UINT16  10Ah    → × 10     → Ah
+        0x1005  soc                      UINT16  0.1%    → × 0.1    → %
+        0x1006  soh                      UINT16  0.1%    → × 0.1    → %
+        0x1007  cycle                    UINT16  1
+        0x1008  avg_cell_voltage         UINT16  1mV     → × 0.001  → V
+        0x1009  avg_cell_temperature     UINT16  0.1K    → × 0.1 − 273.15 → °C
+        0x100A  max_cell_voltage         UINT16  1mV     → × 0.001  → V
+        0x100B  min_cell_voltage         UINT16  1mV     → × 0.001  → V
+        0x100C  max_cell_temperature     UINT16  0.1K    → × 0.1 − 273.15 → °C
+        0x100D  min_cell_temperature     UINT16  0.1K    → × 0.1 − 273.15 → °C
+        0x100E  (reserved)
+        0x100F  max_discharge_current    UINT16  1A
+        0x1010  max_charge_current       UINT16  1A
+        0x1011  (reserved)
     """
     if not response:
         _LOGGER.warning("decode_pia_table: empty response")
         return None
 
-    # Retirer le préfixe '~' éventuel (protocole PYLON/ancien SEPLOS)
+    # Strip possible legacy '~' prefix
     if response.startswith("~"):
         response = response[1:]
 
-    # Vérification CRC
+    # CRC check — reject immediately on failure
     if not verify_crc(response):
-        _LOGGER.warning("decode_pia_table: CRC invalid for frame %s", response)
-        # On continue quand même mais on prévient
+        _LOGGER.error("decode_pia_table: CRC invalid for frame %s — discarding", response)
+        return None
 
     try:
         raw = bytes.fromhex(response)
@@ -238,14 +241,12 @@ def decode_pia_table(response: str):
         _LOGGER.error("decode_pia_table: unable to decode hex frame: %s", e)
         return None
 
-    # Vérifier la longueur minimale : 3 header + 36 data (18 reg × 2) + 2 CRC = 41 bytes
+    # Minimum length: 3 header + 36 data + 2 CRC = 41 bytes
     if len(raw) < 41:
         _LOGGER.warning("decode_pia_table: frame too short (%d bytes, expected >= 41)", len(raw))
         return None
 
-    # Extraction : skip header (3 bytes), retirer CRC (2 bytes)
-    data = raw[3:-2]
-
+    data = raw[3:-2]  # skip header, drop CRC
     pia = V3PIATableData()
 
     try:
@@ -253,7 +254,7 @@ def decode_pia_table(response: str):
         pia.current                  = convert_bytes_to_data("INT16",  data[2],  data[3])  * 0.01
         pia.remaining_capacity       = convert_bytes_to_data("UINT16", data[4],  data[5])  * 0.01
         pia.total_capacity           = convert_bytes_to_data("UINT16", data[6],  data[7])  * 0.01
-        # CORRECTIF : unité = 10Ah dans la spec (pas 10mAh) → ×10 pour obtenir des Ah
+        # Spec says unit = 10Ah for total_discharge_capacity
         pia.total_discharge_capacity = convert_bytes_to_data("UINT16", data[8],  data[9])  * 10
         pia.soc                      = convert_bytes_to_data("UINT16", data[10], data[11]) * 0.1
         pia.soh                      = convert_bytes_to_data("UINT16", data[12], data[13]) * 0.1
@@ -264,13 +265,12 @@ def decode_pia_table(response: str):
         pia.min_cell_voltage         = convert_bytes_to_data("UINT16", data[22], data[23]) * 0.001
         pia.max_cell_temperature     = convert_bytes_to_data("UINT16", data[24], data[25]) * 0.1 - 273.15
         pia.min_cell_temperature     = convert_bytes_to_data("UINT16", data[26], data[27]) * 0.1 - 273.15
-        # Bytes 28-29 : réservé (0x100E)
-        if len(data) >= 32:
-            pia.max_discharge_current = convert_bytes_to_data("UINT16", data[30], data[31])
-        if len(data) >= 34:
-            pia.max_charge_current    = convert_bytes_to_data("UINT16", data[32], data[33])
-    except IndexError as e:
-        _LOGGER.error("decode_pia_table: index error during decoding: %s", e)
+        # byte[28,29] = reserved 0x100E
+        pia.max_discharge_current    = convert_bytes_to_data("UINT16", data[30], data[31])
+        pia.max_charge_current       = convert_bytes_to_data("UINT16", data[32], data[33])
+        # byte[34,35] = reserved 0x1011
+    except (IndexError, TypeError) as e:
+        _LOGGER.error("decode_pia_table: index/type error: %s", e)
         return None
 
     _LOGGER.debug("PIA decoded: %s", pia)
@@ -278,22 +278,22 @@ def decode_pia_table(response: str):
 
 
 # ---------------------------------------------------------------------------
-# Décodage PIB
+# PIB decoding
 # ---------------------------------------------------------------------------
 
 def decode_pib_table(response: str):
     """
-    Décode la réponse Modbus à la commande PIB (registres 0x1100–0x1119).
+    Decode the Modbus response to a PIB command (registers 0x1100–0x1119).
 
-    Structure des données (après header, avant CRC) :
-        Registres 0x1100–0x110F : tensions cellules 1–16    UINT16  1mV → × 0.001 → V
-        Registres 0x1110–0x1113 : températures cellules 1–4 UINT16  0.1K → × 0.1 − 273.15 → °C
-        Registres 0x1114–0x1117 : réservés
-        Registre  0x1118        : température environnement  UINT16  0.1K → × 0.1 − 273.15 → °C
-        Registre  0x1119        : température puissance      UINT16  0.1K → × 0.1 − 273.15 → °C
+    Frame layout:
+        [addr, 0x04, LEN, DATA..., CRC_lo, CRC_hi]
 
-    La trame complète fait :
-        3 (header) + 52 (26 reg × 2) + 2 (CRC) = 57 bytes minimum
+    Register layout:
+        0x1100–0x110F  cell voltages 1–16       UINT16  1mV    → × 0.001 → V
+        0x1110–0x1113  cell temperatures 1–4     UINT16  0.1K   → × 0.1 − 273.15 → °C
+        0x1114–0x1117  (reserved)
+        0x1118         environment temperature   UINT16  0.1K   → × 0.1 − 273.15 → °C
+        0x1119         power temperature          UINT16  0.1K   → × 0.1 − 273.15 → °C
     """
     if not response:
         _LOGGER.warning("decode_pib_table: empty response")
@@ -302,8 +302,10 @@ def decode_pib_table(response: str):
     if response.startswith("~"):
         response = response[1:]
 
+    # CRC check — reject immediately on failure
     if not verify_crc(response):
-        _LOGGER.warning("decode_pib_table: CRC invalid for frame %s", response)
+        _LOGGER.error("decode_pib_table: CRC invalid for frame %s — discarding", response)
+        return None
 
     try:
         raw = bytes.fromhex(response)
@@ -311,18 +313,16 @@ def decode_pib_table(response: str):
         _LOGGER.error("decode_pib_table: unable to decode hex frame: %s", e)
         return None
 
-    # Minimum : 3 header + 52 data (26 reg × 2) + 2 CRC = 57 bytes
+    # Minimum length: 3 header + 52 data + 2 CRC = 57 bytes
     if len(raw) < 57:
         _LOGGER.warning("decode_pib_table: frame too short (%d bytes, expected >= 57)", len(raw))
         return None
 
-    # Skip header (3 bytes), retirer CRC (2 bytes)
     data = raw[3:-2]
-
     pib = V3PIBTableData()
 
     try:
-        # Tensions 16 cellules (registres 0x1100 à 0x110F)
+        # Cell voltages (registers 0x1100–0x110F, 16 cells)
         pib.cell1_voltage  = convert_bytes_to_data("UINT16", data[0],  data[1])  * 0.001
         pib.cell2_voltage  = convert_bytes_to_data("UINT16", data[2],  data[3])  * 0.001
         pib.cell3_voltage  = convert_bytes_to_data("UINT16", data[4],  data[5])  * 0.001
@@ -340,24 +340,24 @@ def decode_pib_table(response: str):
         pib.cell15_voltage = convert_bytes_to_data("UINT16", data[28], data[29]) * 0.001
         pib.cell16_voltage = convert_bytes_to_data("UINT16", data[30], data[31]) * 0.001
 
-        # Températures cellules (registres 0x1110 à 0x1113)
+        # Cell temperatures (registers 0x1110–0x1113)
         pib.cell_temperature_1 = convert_bytes_to_data("UINT16", data[32], data[33]) * 0.1 - 273.15
         pib.cell_temperature_2 = convert_bytes_to_data("UINT16", data[34], data[35]) * 0.1 - 273.15
         pib.cell_temperature_3 = convert_bytes_to_data("UINT16", data[36], data[37]) * 0.1 - 273.15
         pib.cell_temperature_4 = convert_bytes_to_data("UINT16", data[38], data[39]) * 0.1 - 273.15
 
-        # Registres 0x1114–0x1117 : réservés (bytes 40-47 ignorés)
+        # Registers 0x1114–0x1117 are reserved (bytes 40–47)
 
-        # Température environnement (registre 0x1118)
+        # Environment temperature (register 0x1118)
         if len(data) >= 50:
             pib.environment_temperature = convert_bytes_to_data("UINT16", data[48], data[49]) * 0.1 - 273.15
 
-        # Température puissance (registre 0x1119)
+        # Power temperature (register 0x1119)
         if len(data) >= 52:
             pib.power_temperature = convert_bytes_to_data("UINT16", data[50], data[51]) * 0.1 - 273.15
 
-    except IndexError as e:
-        _LOGGER.error("decode_pib_table: index error during decoding: %s", e)
+    except (IndexError, TypeError) as e:
+        _LOGGER.error("decode_pib_table: index/type error during decoding: %s", e)
         return None
 
     _LOGGER.debug("PIB decoded: %s", pib)
@@ -365,28 +365,25 @@ def decode_pib_table(response: str):
 
 
 # ---------------------------------------------------------------------------
-# Point d'entrée principal
+# Entry point
 # ---------------------------------------------------------------------------
 
 def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=True,
                                debug=True, config_battery_address=None):
     """
-    Parse les réponses Modbus (PIA + PIB) et retourne les données structurées.
+    Parse PIA + PIB Modbus responses and return structured data.
 
     Args:
-        msg:                    Liste de 2 trames hex (réponse PIA, réponse PIB)
-        telemetry_requested:    Inutilisé pour l'instant (héritage)
-        teledata_requested:     Inutilisé pour l'instant (héritage)
-        debug:                  Inutilisé pour l'instant (héritage)
-        config_battery_address: Adresse configurée (int ou str), utilisée comme libellé
+        msg:                     List of 2 hex strings (PIA response, PIB response).
+        telemetry_requested:     Legacy — unused.
+        teledata_requested:      Legacy — unused.
+        debug:                   Legacy — unused.
+        config_battery_address:  Battery address for display (int or str).
 
     Returns:
-        Tuple (battery_address, pia_data, pib_data, [], [])
-        battery_address : str représentant l'adresse (ex: "0x01")
-        pia_data        : instance V3PIATableData ou None si erreur
-        pib_data        : instance V3PIBTableData ou None si erreur
+        Tuple (battery_address, pia_data, pib_data, [], []).
     """
-    # Normalisation de l'adresse pour l'affichage
+    # Normalise address for display
     if isinstance(config_battery_address, int):
         address_string = f"0x{config_battery_address:02X}"
     else:
@@ -400,7 +397,6 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
         return address_string, pia_data, pib_data, [], []
 
     for idx, response in enumerate(msg):
-        # Retirer le préfixe '~' si présent
         if isinstance(response, str) and response.startswith("~"):
             response = response[1:]
 
@@ -412,7 +408,6 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
                 _LOGGER.error("PIA decoding failed for battery %s", address_string)
             else:
                 _LOGGER.debug("PIA OK: %s", pia_data)
-
         elif idx == 1:
             pib_data = decode_pib_table(response)
             if pib_data is None:
