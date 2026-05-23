@@ -36,7 +36,7 @@ _MISSING = object()
 # ---------------------------------------------------------------------------
 
 async def generate_sensors(hass, bms_type, connector_info, config_battery_address,
-                            sensor_prefix, entry_id, async_add_entities):
+                            sensor_prefix, entry_id, async_add_entities, poll_interval=10):
     """
     Génère et enregistre tous les capteurs pour UNE adresse de batterie.
 
