@@ -33,5 +33,6 @@ jobs:
           uses: "hacs/action@main"
           with:
             category: "integration"
+            github_token: "${{ secrets.GITHUB_TOKEN }}"
             # Remove this 'ignore' key when you have added brand images for your integration to https://github.com/home-assistant/brands
             ignore: "brands"
