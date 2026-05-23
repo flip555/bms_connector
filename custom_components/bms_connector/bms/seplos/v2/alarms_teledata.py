@@ -31,7 +31,6 @@ class Alarms:
             f"currentAlarm: {self.currentAlarm}, "
             f"voltageAlarm: {self.voltageAlarm}, "
             f"customAlarms: {self.customAlarms}, "
-"
             f"alarmEvent1: {self.alarmEvent1}, "
             f"alarmEvent2: {self.alarmEvent2}, "
             f"alarmEvent3: {self.alarmEvent3}, "
