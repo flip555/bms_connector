@@ -86,8 +86,8 @@ class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="sensor_prefix",
             data_schema=vol.Schema({
-                vol.Required("battery_address", description="Battery address", default="{0}".format(self.user_input["default_address"])): str,
-                vol.Required("sensor_prefix", description="Sensor name prefix", default="{0}".format(self.user_input["default_prefix"])): str,
+                vol.Required("battery_address", description="Battery address", default="{}".format(self.user_input["default_address"])): str,
+                vol.Required("sensor_prefix", description="Sensor name prefix", default="{}".format(self.user_input["default_prefix"])): str,
                 vol.Optional(CONF_POLL_INTERVAL, description="Poll interval (seconds)", default=10): vol.All(vol.Coerce(int), vol.Range(min=1, max=300)),
             }),
         )
