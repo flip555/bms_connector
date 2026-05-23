@@ -7,20 +7,20 @@ class Alarms:
         self.currentAlarm = 0
         self.voltageAlarm = 0
         self.customAlarms = 0
-        self.alarmEvent0 = 0
         self.alarmEvent1 = 0
         self.alarmEvent2 = 0
         self.alarmEvent3 = 0
         self.alarmEvent4 = 0
         self.alarmEvent5 = 0
+        self.alarmEvent6 = 0
         self.onOffState = 0
         self.equilibriumState0 = 0
         self.equilibriumState1 = 0
         self.systemState = 0
         self.disconnectionState0 = 0
         self.disconnectionState1 = 0
-        self.alarmEvent6 = 0
         self.alarmEvent7 = 0
+        self.alarmEvent8 = 0
 
     def __str__(self):
         return (
@@ -31,7 +31,7 @@ class Alarms:
             f"currentAlarm: {self.currentAlarm}, "
             f"voltageAlarm: {self.voltageAlarm}, "
             f"customAlarms: {self.customAlarms}, "
-            f"alarmEvent0: {self.alarmEvent0}, "
+"
             f"alarmEvent1: {self.alarmEvent1}, "
             f"alarmEvent2: {self.alarmEvent2}, "
             f"alarmEvent3: {self.alarmEvent3}, "
@@ -44,7 +44,8 @@ class Alarms:
             f"disconnectionState0: {self.disconnectionState0}, "
             f"disconnectionState1: {self.disconnectionState1}, "
             f"alarmEvent6: {self.alarmEvent6}, "
-            f"alarmEvent7: {self.alarmEvent7}"
+            f"alarmEvent7: {self.alarmEvent7}, "
+            f"alarmEvent8: {self.alarmEvent8}"
         )
 
 def parse_teledata_info(info_str):

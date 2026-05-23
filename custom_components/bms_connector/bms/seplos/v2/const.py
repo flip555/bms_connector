@@ -40,7 +40,7 @@ TELEDATA_CODES = {
 
 ALARM_ATTRIBUTES = [
     "cellAlarm", "tempAlarm", "currentAlarm", "voltageAlarm",
-    "customAlarms", "alarmEvent0", "alarmEvent1", "alarmEvent2",
+    "customAlarms", "alarmEvent1", "alarmEvent2", "alarmEvent2",
     "alarmEvent3", "alarmEvent4", "alarmEvent5", "alarmEvent6",
     "alarmEvent7", "onOffState", "equilibriumState0", "equilibriumState1",
     "systemState", "disconnectionState0", "disconnectionState1"
