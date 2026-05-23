@@ -62,7 +62,7 @@ from .calc_functions import (
 _LOGGER = logging.getLogger(__name__)
 
 # Define the generate_sensors function
-async def generate_sensors(hass, bms_type, connector_info, config_battery_address, sensor_prefix, entry_id, async_add_entities):
+async def generate_sensors(hass, bms_type, connector_info, config_battery_address, sensor_prefix, entry_id, async_add_entities, poll_interval=10):
     class DerivedSeplosBMSSensor(SeplosBMSSensorBase):
         def __init__(self, *args, **kwargs):
             self._calc_function = kwargs.pop("calc_function", None)
@@ -113,7 +113,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         _LOGGER,
         name="seplos_bms_sensor",
         update_method=async_update_data,
-        update_interval=timedelta(seconds=5),  # Define how often to fetch data
+        update_interval=timedelta(seconds=poll_interval),
     )
     _LOGGER.debug("async_refresh data generate_sensors called")
     await coordinator.async_refresh() 

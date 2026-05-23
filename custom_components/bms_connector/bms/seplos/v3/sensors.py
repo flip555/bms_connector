@@ -127,7 +127,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         _LOGGER,
         name=f"seplos_bms_sensor_{config_battery_address}",
         update_method=async_update_data,
-        update_interval=timedelta(seconds=5),
+        update_interval=timedelta(seconds=poll_interval),
     )
 
     _LOGGER.debug("async_refresh data generate_sensors called (addr=%s)", config_battery_address)

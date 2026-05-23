@@ -5,6 +5,7 @@ VERSION = "1.2.3"
 ATTRIBUTION = "Integration for BMS via serial communication."
 
 CONF_CONNECTION_TYPE = "connection_type"
+CONF_POLL_INTERVAL = "poll_interval"
 CONF_HOST = "host"
 CONF_PORT = "port"
 

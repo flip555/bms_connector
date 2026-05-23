@@ -78,5 +78,6 @@ class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({
                 vol.Required("battery_address", description="Battery address", default=f"{self.user_input['default_address']}"): str,
                 vol.Required("sensor_prefix", description="Sensor name prefix", default=f"{self.user_input['default_prefix']}"): str,
+                vol.Optional("poll_interval", description="Poll interval (seconds)", default=10): vol.All(vol.Coerce(int), vol.Range(min=1, max=300)),
             }),
         )
