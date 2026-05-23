@@ -27,26 +27,26 @@ def battery_watts(data):
     volts = getattr(telemetry, 'portVoltage', 0.0)
     amps = getattr(telemetry, 'current', 0.0)
     if isinstance(volts, float | int) and isinstance(amps, float | int):
-        return volts * amps
-    return 0.0  # Handle the case when volts or amps are not numeric values
+        return int(round(volts * amps))
+    return 0
 
 def remaining_watts(data):
     telemetry = extract_data(data)
     volts = getattr(telemetry, 'voltage', 0.0)
     amps = getattr(telemetry, 'resCap', 0.0)
-    return volts * amps
+    return int(round(volts * amps))
 
 def capacity_watts(data):
     telemetry = extract_data(data)
     volts = getattr(telemetry, 'voltage', 0.0)
     amps = getattr(telemetry, 'capacity', 0.0)
-    return volts * amps
+    return int(round(volts * amps))
 
 def full_charge_amps(data):
     telemetry = extract_data(data)
     remaining = getattr(telemetry, 'resCap', 0.0)
     capacity = getattr(telemetry, 'capacity', 0.0)
-    return capacity - remaining
+    return int(round(capacity - remaining))
 
 def full_charge_watts(data):
     telemetry = extract_data(data)
@@ -55,7 +55,7 @@ def full_charge_watts(data):
     capacity = getattr(telemetry, 'capacity', 0.0)
     remaining_w = voltage * resCap
     cap_w = voltage * capacity
-    return cap_w - remaining_w
+    return int(round(cap_w - remaining_w))
 
 def get_cell_extremes_and_difference(data):
     telemetry = extract_data(data)
