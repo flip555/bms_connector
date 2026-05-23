@@ -113,130 +113,35 @@ def lowest_temp_sensor(data):
         return f"Sensor {temps.index(min(temps)) + 1}"
     return "N/A"
 
-def balancer_cell_1(data):
+def balancer_active(cell_number, data):
+    """
+    Check if a specific cell's balancer is active using direct bitmask operations.
+    Cells 1-8 use equilibriumState0 (bits 0-7), cells 9-16 use equilibriumState1 (bits 0-7).
+    """
     alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-    if "Cell 01" in active_balancers:
-        return True
-    else:
+    if cell_number < 1 or cell_number > 16:
         return False
+    if cell_number <= 8:
+        state = getattr(alarms, 'equilibriumState0', 0)
+        bit = 1 << (cell_number - 1)
+    else:
+        state = getattr(alarms, 'equilibriumState1', 0)
+        bit = 1 << (cell_number - 9)
+    return bool(state & bit)
 
-def balancer_cell_2(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-    if "Cell 02" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_3(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-    if "Cell 03" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_4(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-    if "Cell 04" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_5(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-    if "Cell 05" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_6(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-    if "Cell 06" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_7(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-    if "Cell 07" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_8(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState0", getattr(alarms, 'equilibriumState0', str()))
-    if "Cell 08" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_9(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState1", getattr(alarms, 'equilibriumState1', str()))
-    if "Cell 09" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_10(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState1", getattr(alarms, 'equilibriumState1', str()))
-    if "Cell 10" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_11(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState1", getattr(alarms, 'equilibriumState1', str()))
-    if "Cell 11" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_12(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState1", getattr(alarms, 'equilibriumState1', str()))
-    if "Cell 12" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_13(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState1", getattr(alarms, 'equilibriumState1', str()))
-    if "Cell 13" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_14(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState1", getattr(alarms, 'equilibriumState1', str()))
-    if "Cell 14" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_15(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState1", getattr(alarms, 'equilibriumState1', str()))
-    if "Cell 15" in active_balancers:
-        return True
-    else:
-        return False
-
-def balancer_cell_16(data):
-    alarms = extract_alarms(data)
-    active_balancers = interpret_alarm("equilibriumState1", getattr(alarms, 'equilibriumState1', str()))
-    if "Cell 16" in active_balancers:
-        return True
-    else:
-        return False
+def balancer_cell_1(data): return balancer_active(1, data)
+def balancer_cell_2(data): return balancer_active(2, data)
+def balancer_cell_3(data): return balancer_active(3, data)
+def balancer_cell_4(data): return balancer_active(4, data)
+def balancer_cell_5(data): return balancer_active(5, data)
+def balancer_cell_6(data): return balancer_active(6, data)
+def balancer_cell_7(data): return balancer_active(7, data)
+def balancer_cell_8(data): return balancer_active(8, data)
+def balancer_cell_9(data): return balancer_active(9, data)
+def balancer_cell_10(data): return balancer_active(10, data)
+def balancer_cell_11(data): return balancer_active(11, data)
+def balancer_cell_12(data): return balancer_active(12, data)
+def balancer_cell_13(data): return balancer_active(13, data)
+def balancer_cell_14(data): return balancer_active(14, data)
+def balancer_cell_15(data): return balancer_active(15, data)
+def balancer_cell_16(data): return balancer_active(16, data)
