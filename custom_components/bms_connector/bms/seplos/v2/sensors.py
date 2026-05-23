@@ -1,4 +1,4 @@
-from homeassistant.helpers.entity import Entity
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -281,7 +281,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
 
     async_add_entities(sensors, True)
 
-class SeplosBMSSensorBase(CoordinatorEntity):
+class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
     def interpret_alarm(self, event, value):
         flags = ALARM_MAPPINGS.get(event, [])
 
@@ -306,6 +306,7 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         self._sensor_prefix = sensor_prefix
         self._entry_id = entry_id
         self._is_settings = is_settings
+        self._set_sensor_attributes(attribute)
         
         # Set device info — split BMS and Settings into separate devices like HEH
         if is_settings:
@@ -325,11 +326,38 @@ class SeplosBMSSensorBase(CoordinatorEntity):
                 sw_version="Unknown",
             )
 
+
+    def _set_sensor_attributes(self, attribute):
+        """Set device class and state class based on sensor type."""
+        # For derived sensors, attribute is None - check the display name instead
+        check = attribute.lower() if attribute else self._name.lower()
+
+        if 'temperature' in check:
+            self._attr_device_class = SensorDeviceClass.TEMPERATURE
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'voltage' in check:
+            self._attr_device_class = SensorDeviceClass.VOLTAGE
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'current' in check and 'alarm' not in check:
+            self._attr_device_class = SensorDeviceClass.CURRENT
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'power' in check or 'watts' in check:
+            self._attr_device_class = SensorDeviceClass.POWER
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'soc' in check:
+            self._attr_device_class = SensorDeviceClass.BATTERY
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'capacity' in check and 'watts' not in check:
+            pass  # capacity in Ah - no state class needed
+        elif 'cycles' in check:
+            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+
     @property
     def name(self):
         """Return the name of the sensor."""
         prefix = f"{self._sensor_prefix} - {self._battery_address} -"
         return f"{prefix} {self._name}"
+
         
     @property
     def unique_id(self):

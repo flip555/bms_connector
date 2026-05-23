@@ -311,28 +311,27 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
 
     def _set_sensor_attributes(self, attribute):
         """Set device class and state class based on sensor type."""
-        if not attribute or attribute in ('', None):
-            return
-        attr_lower = attribute.lower()
+        # For derived sensors, attribute is None - check the display name instead
+        check = attribute.lower() if attribute else self._name.lower()
 
-        if 'temperature' in attr_lower:
+        if 'temperature' in check:
             self._attr_device_class = SensorDeviceClass.TEMPERATURE
             self._attr_state_class = SensorStateClass.MEASUREMENT
-        elif 'voltage' in attr_lower:
+        elif 'voltage' in check:
             self._attr_device_class = SensorDeviceClass.VOLTAGE
             self._attr_state_class = SensorStateClass.MEASUREMENT
-        elif 'current' in attr_lower and 'alarm' not in attr_lower:
+        elif 'current' in check and 'alarm' not in check:
             self._attr_device_class = SensorDeviceClass.CURRENT
             self._attr_state_class = SensorStateClass.MEASUREMENT
-        elif 'power' in attr_lower or 'watts' in attr_lower:
+        elif 'power' in check or 'watts' in check:
             self._attr_device_class = SensorDeviceClass.POWER
             self._attr_state_class = SensorStateClass.MEASUREMENT
-        elif 'soc' in attr_lower:
+        elif 'soc' in check:
             self._attr_device_class = SensorDeviceClass.BATTERY
             self._attr_state_class = SensorStateClass.MEASUREMENT
-        elif 'capacity' in attr_lower:
-            self._attr_state_class = SensorStateClass.MEASUREMENT
-        elif 'cycles' in attr_lower:
+        elif 'capacity' in check and 'watts' not in check:
+            pass  # capacity in Ah - no state class needed
+        elif 'cycles' in check:
             self._attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     @property
