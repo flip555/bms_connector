@@ -1,4 +1,4 @@
-from homeassistant.helpers.entity import Entity
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -272,7 +272,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
 # Classe de base des capteurs
 # ---------------------------------------------------------------------------
 
-class SeplosBMSSensorBase(CoordinatorEntity):
+class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
     """Capteur de base pour un attribut d'une batterie SEPLOS V3."""
 
     def interpret_alarm(self, event, value):
@@ -295,6 +295,7 @@ class SeplosBMSSensorBase(CoordinatorEntity):
         self._icon = icon
         self._battery_address = battery_address
         self._sensor_prefix = sensor_prefix
+        self._set_sensor_attributes(attribute)
         self._entry_id = entry_id
         
         # Device info for V3 BMS
@@ -306,6 +307,33 @@ class SeplosBMSSensorBase(CoordinatorEntity):
             sw_version="Unknown",
         )
         self._entry_id = entry_id
+
+
+    def _set_sensor_attributes(self, attribute):
+        """Set device class and state class based on sensor type."""
+        if not attribute or attribute in ('', None):
+            return
+        attr_lower = attribute.lower()
+
+        if 'temperature' in attr_lower:
+            self._attr_device_class = SensorDeviceClass.TEMPERATURE
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'voltage' in attr_lower:
+            self._attr_device_class = SensorDeviceClass.VOLTAGE
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'current' in attr_lower and 'alarm' not in attr_lower:
+            self._attr_device_class = SensorDeviceClass.CURRENT
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'power' in attr_lower or 'watts' in attr_lower:
+            self._attr_device_class = SensorDeviceClass.POWER
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'soc' in attr_lower:
+            self._attr_device_class = SensorDeviceClass.BATTERY
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'capacity' in attr_lower:
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif 'cycles' in attr_lower:
+            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     @property
     def name(self):
