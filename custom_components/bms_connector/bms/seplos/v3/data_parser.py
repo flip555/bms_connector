@@ -54,7 +54,7 @@ def build_read_command(addr: int, register: int, count: int) -> str:
     payload = bytes([addr, 0x04]) + struct.pack('>HH', register, count)
     crc = modbus_crc(payload)
     cmd = (payload + crc).hex()
-    _LOGGER.debug("Commande Modbus construite : %s (addr=0x%02X, reg=0x%04X, count=%d)",
+    _LOGGER.debug("Modbus command built: %s (addr=0x%02X, reg=0x%04X, count=%d)",
                   cmd, addr, register, count)
     return cmd
 
@@ -68,7 +68,7 @@ def build_commands_for_address(battery_addr: int) -> list:
     """
     cmd_pia = build_read_command(battery_addr, 0x1000, 0x12)
     cmd_pib = build_read_command(battery_addr, 0x1100, 0x1A)
-    _LOGGER.debug("Commandes pour batterie 0x%02X : PIA=%s | PIB=%s",
+    _LOGGER.debug("Commands for battery 0x%02X: PIA=%s | PIB=%s",
                   battery_addr, cmd_pia, cmd_pib)
     return [cmd_pia, cmd_pib]
 
@@ -220,7 +220,7 @@ def decode_pia_table(response: str):
         0x1011  (réservé)
     """
     if not response:
-        _LOGGER.warning("decode_pia_table : réponse vide")
+        _LOGGER.warning("decode_pia_table: empty response")
         return None
 
     # Retirer le préfixe '~' éventuel (protocole PYLON/ancien SEPLOS)
@@ -229,18 +229,18 @@ def decode_pia_table(response: str):
 
     # Vérification CRC
     if not verify_crc(response):
-        _LOGGER.warning("decode_pia_table : CRC invalide pour la trame %s", response)
+        _LOGGER.warning("decode_pia_table: CRC invalid for frame %s", response)
         # On continue quand même mais on prévient
 
     try:
         raw = bytes.fromhex(response)
     except ValueError as e:
-        _LOGGER.error("decode_pia_table : impossible de décoder la trame hex : %s", e)
+        _LOGGER.error("decode_pia_table: unable to decode hex frame: %s", e)
         return None
 
     # Vérifier la longueur minimale : 3 header + 36 data (18 reg × 2) + 2 CRC = 41 bytes
     if len(raw) < 41:
-        _LOGGER.warning("decode_pia_table : trame trop courte (%d bytes, attendu ≥ 41)", len(raw))
+        _LOGGER.warning("decode_pia_table: frame too short (%d bytes, expected >= 41)", len(raw))
         return None
 
     # Extraction : skip header (3 bytes), retirer CRC (2 bytes)
@@ -270,10 +270,10 @@ def decode_pia_table(response: str):
         if len(data) >= 34:
             pia.max_charge_current    = convert_bytes_to_data("UINT16", data[32], data[33])
     except IndexError as e:
-        _LOGGER.error("decode_pia_table : erreur d'index lors du décodage : %s", e)
+        _LOGGER.error("decode_pia_table: index error during decoding: %s", e)
         return None
 
-    _LOGGER.debug("PIA décodé : %s", pia)
+    _LOGGER.debug("PIA decoded: %s", pia)
     return pia
 
 
@@ -296,24 +296,24 @@ def decode_pib_table(response: str):
         3 (header) + 52 (26 reg × 2) + 2 (CRC) = 57 bytes minimum
     """
     if not response:
-        _LOGGER.warning("decode_pib_table : réponse vide")
+        _LOGGER.warning("decode_pib_table: empty response")
         return None
 
     if response.startswith("~"):
         response = response[1:]
 
     if not verify_crc(response):
-        _LOGGER.warning("decode_pib_table : CRC invalide pour la trame %s", response)
+        _LOGGER.warning("decode_pib_table: CRC invalid for frame %s", response)
 
     try:
         raw = bytes.fromhex(response)
     except ValueError as e:
-        _LOGGER.error("decode_pib_table : impossible de décoder la trame hex : %s", e)
+        _LOGGER.error("decode_pib_table: unable to decode hex frame: %s", e)
         return None
 
     # Minimum : 3 header + 52 data (26 reg × 2) + 2 CRC = 57 bytes
     if len(raw) < 57:
-        _LOGGER.warning("decode_pib_table : trame trop courte (%d bytes, attendu ≥ 57)", len(raw))
+        _LOGGER.warning("decode_pib_table: frame too short (%d bytes, expected >= 57)", len(raw))
         return None
 
     # Skip header (3 bytes), retirer CRC (2 bytes)
@@ -357,10 +357,10 @@ def decode_pib_table(response: str):
             pib.power_temperature = convert_bytes_to_data("UINT16", data[50], data[51]) * 0.1 - 273.15
 
     except IndexError as e:
-        _LOGGER.error("decode_pib_table : erreur d'index lors du décodage : %s", e)
+        _LOGGER.error("decode_pib_table: index error during decoding: %s", e)
         return None
 
-    _LOGGER.debug("PIB décodé : %s", pib)
+    _LOGGER.debug("PIB decoded: %s", pib)
     return pib
 
 
@@ -396,7 +396,7 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
     pib_data = None
 
     if not msg or len(msg) < 2:
-        _LOGGER.error("extract_data_from_message : msg doit contenir au moins 2 trames")
+        _LOGGER.error("extract_data_from_message: msg must contain at least 2 frames")
         return address_string, pia_data, pib_data, [], []
 
     for idx, response in enumerate(msg):
@@ -404,20 +404,20 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
         if isinstance(response, str) and response.startswith("~"):
             response = response[1:]
 
-        _LOGGER.debug("Trame %d reçue : %s", idx, response)
+        _LOGGER.debug("Frame %d received: %s", idx, response)
 
         if idx == 0:
             pia_data = decode_pia_table(response)
             if pia_data is None:
-                _LOGGER.error("Échec du décodage PIA pour la batterie %s", address_string)
+                _LOGGER.error("PIA decoding failed for battery %s", address_string)
             else:
-                _LOGGER.debug("PIA OK : %s", pia_data)
+                _LOGGER.debug("PIA OK: %s", pia_data)
 
         elif idx == 1:
             pib_data = decode_pib_table(response)
             if pib_data is None:
-                _LOGGER.error("Échec du décodage PIB pour la batterie %s", address_string)
+                _LOGGER.error("PIB decoding failed for battery %s", address_string)
             else:
-                _LOGGER.debug("PIB OK : %s", pib_data)
+                _LOGGER.debug("PIB OK: %s", pib_data)
 
     return address_string, pia_data, pib_data, [], []

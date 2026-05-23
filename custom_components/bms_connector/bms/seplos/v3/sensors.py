@@ -84,7 +84,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
             except ValueError:
                 addr_int = 1
                 _LOGGER.warning(
-                    "config_battery_address '%s' invalide, utilisation de l'adresse par défaut 1",
+                    "config_battery_address '%s' invalid, using default address 1",
                     config_battery_address
                 )
         else:
@@ -94,7 +94,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         # (remplace les anciennes commandes hardcodées avec adresse 0x00)
         commands = build_commands_for_address(addr_int)
         _LOGGER.debug(
-            "Interrogation batterie 0x%02X : PIA=%s | PIB=%s",
+            "Polling battery 0x%02X: PIA=%s | PIB=%s",
             addr_int, commands[0], commands[1]
         )
 
@@ -376,13 +376,13 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         if value is _MISSING or value is None or value == '':
             if self._attribute == 'current':
                 _LOGGER.debug(
-                    "current est None, retour à 0.00 pour éviter 'unknown' dans HA"
+                    "current is None, returning 0.00 to avoid 'unknown' in HA"
                 )
                 return 0.00
-            _LOGGER.warning("Aucune donnée trouvée pour %s", self._name)
+            _LOGGER.warning("No data found for %s", self._name)
             return None
 
-        _LOGGER.debug("État du capteur %s : %s", self._name, value)
+        _LOGGER.debug("Sensor state %s: %s", self._name, value)
         return value
 
     @property
