@@ -7,7 +7,7 @@ from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.entity import DeviceInfo
 
 from .data_parser import extract_data_from_message, build_commands_for_address
-from ....connector import get_serial_send_function
+from ....connector.local_serial.seplos_v3_local_serial import send_serial_command as v3_send_serial_command
 import asyncio
 import logging
 from datetime import timedelta
@@ -97,10 +97,12 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
             addr_int, commands[0], commands[1]
         )
 
-        # Envoi série (bloquant, exécuté dans un thread executor)
-        send_func = get_serial_send_function(connector_info)
+        # Envoi série — utilise le module V3 spécialisé pour Modbus RTU
+        # (envoi en binaire, gestion RS485 half-duplex, synchronisation de trame)
+        serial_port = connector_info.get("port")
+        serial_baud = connector_info.get("baudrate", 19200)
         telemetry_data_str = await hass.async_add_executor_job(
-            send_func, commands
+            v3_send_serial_command, commands, serial_port, serial_baud
         )
 
         # Parsing des réponses
@@ -297,7 +299,7 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         self._sensor_prefix = sensor_prefix
         self._set_sensor_attributes(attribute)
         self._entry_id = entry_id
-        
+
         # Device info for V3 BMS
         self._attr_device_info = DeviceInfo(
             identifiers={("bms_connector", f"seplos_v3_{entry_id}")},
@@ -306,7 +308,6 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
             model="V3 BMS",
             sw_version="Unknown",
         )
-        self._entry_id = entry_id
 
 
     def _set_sensor_attributes(self, attribute):
