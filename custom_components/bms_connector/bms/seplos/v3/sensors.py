@@ -8,6 +8,7 @@ from homeassistant.helpers.entity import DeviceInfo
 
 from .data_parser import extract_data_from_message, build_commands_for_address
 from ....connector.local_serial.seplos_v3_local_serial import send_serial_command as v3_send_serial_command
+from ....connector.local_serial.seplos_v3_local_serial import send_telnet_command as v3_send_telnet_command
 import asyncio
 import logging
 from datetime import timedelta
@@ -97,13 +98,21 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
             addr_int, commands[0], commands[1]
         )
 
-        # Envoi série — utilise le module V3 spécialisé pour Modbus RTU
-        # (envoi en binaire, gestion RS485 half-duplex, synchronisation de trame)
-        serial_port = connector_info.get("port")
-        serial_baud = connector_info.get("baudrate", 19200)
-        telemetry_data_str = await hass.async_add_executor_job(
-            v3_send_serial_command, commands, serial_port, serial_baud
-        )
+        # Envoi — utilise le module V3 spécialisé pour Modbus RTU
+        # (envoi en binaire brut, pas d'ASCII)
+        if connector_info.get("type") == "telnet":
+            telnet_host = connector_info.get("host")
+            telnet_port = connector_info.get("port", 23)
+            telnet_timeout = connector_info.get("timeout", 8)
+            telemetry_data_str = await hass.async_add_executor_job(
+                v3_send_telnet_command, commands, telnet_host, telnet_port, telnet_timeout
+            )
+        else:
+            serial_port = connector_info.get("port")
+            serial_baud = connector_info.get("baudrate", 19200)
+            telemetry_data_str = await hass.async_add_executor_job(
+                v3_send_serial_command, commands, serial_port, serial_baud
+            )
 
         # Parsing des réponses
         battery_address, pia, pib, system_details, protection_settings = \
