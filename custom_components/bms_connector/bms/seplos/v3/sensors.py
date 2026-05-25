@@ -6,7 +6,7 @@ from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.entity import DeviceInfo
 
-from .data_parser import extract_data_from_message, build_commands_for_address
+from .data_parser import extract_data_from_message, build_commands_for_address, discover_bms_address
 from ....connector.local_serial.seplos_v3_local_serial import send_serial_command as v3_send_serial_command
 from ....connector.local_serial.seplos_v3_local_serial import send_telnet_command as v3_send_telnet_command
 import asyncio
@@ -100,7 +100,11 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
 
         # Envoi — utilise le module V3 spécialisé pour Modbus RTU
         # (envoi en binaire brut, pas d'ASCII)
-        if connector_info.get("type") == "telnet":
+        connector_type = connector_info.get("type", "serial")
+        serial_port = connector_info.get("port")
+        serial_baud = connector_info.get("baudrate", 19200)
+
+        if connector_type == "telnet":
             telnet_host = connector_info.get("host")
             telnet_port = connector_info.get("port", 23)
             telnet_timeout = connector_info.get("timeout", 8)
@@ -108,11 +112,42 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
                 v3_send_telnet_command, commands, telnet_host, telnet_port, telnet_timeout
             )
         else:
-            serial_port = connector_info.get("port")
-            serial_baud = connector_info.get("baudrate", 19200)
             telemetry_data_str = await hass.async_add_executor_job(
                 v3_send_serial_command, commands, serial_port, serial_baud
             )
+
+        # Auto-découverte d'adresse si la configurée ne répond pas
+        if not telemetry_data_str or not telemetry_data_str[0]:
+            _LOGGER.warning(
+                "No response from configured address 0x%02X — scanning for BMS...",
+                addr_int
+            )
+            discovered = await hass.async_add_executor_job(
+                discover_bms_address, v3_send_serial_command, serial_port, serial_baud
+            )
+            if discovered is not None and discovered != addr_int:
+                _LOGGER.warning(
+                    "BMS found at address 0x%02X (configured was 0x%02X) — "
+                    "auto-using 0x%02X for this session. Consider updating your "
+                    "configuration to address 0x%02X.",
+                    discovered, addr_int, discovered, discovered
+                )
+                addr_int = discovered
+                # Réessayer avec la bonne adresse
+                commands = build_commands_for_address(addr_int)
+                if connector_type == "telnet":
+                    telemetry_data_str = await hass.async_add_executor_job(
+                        v3_send_telnet_command, commands, telnet_host, telnet_port, telnet_timeout
+                    )
+                else:
+                    telemetry_data_str = await hass.async_add_executor_job(
+                        v3_send_serial_command, commands, serial_port, serial_baud
+                    )
+            elif discovered is None:
+                _LOGGER.error(
+                    "No BMS found on %s — check wiring and BMS address",
+                    serial_port or "unknown"
+                )
 
         # Parsing des réponses
         battery_address, pia, pib, system_details, protection_settings = \

@@ -1,7 +1,7 @@
 # const.py
 NAME = "BMS Connector"
 DOMAIN = "bms_connector"
-VERSION = "1.3.2"
+VERSION = "1.3.4"
 ATTRIBUTION = "Integration for BMS via serial communication."
 
 CONF_CONNECTION_TYPE = "connection_type"
@@ -16,6 +16,6 @@ CONNECTION_TYPES = {
 
 BMS_TYPE_DEFAULTS = {
     "SEPLV2": {"bms_name": "SEP BMS V2 (SEPLV2)", "default_prefix": "Seplos BMS HA", "default_address": "0x00"},
-    "SEPLV3": {"bms_name": "SEP BMS V3 (SEPLV3)", "default_prefix": "Seplos BMS V3", "default_address": "0x01"},
+    "SEPLV3": {"bms_name": "SEP BMS V3 (SEPLV3)", "default_prefix": "Seplos BMS V3", "default_address": "0x00"},
 }
 

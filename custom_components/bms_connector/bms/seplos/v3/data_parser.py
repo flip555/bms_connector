@@ -74,6 +74,95 @@ def build_commands_for_address(battery_addr: int) -> list:
 
 
 # ---------------------------------------------------------------------------
+# Découverte d'adresse BMS
+# ---------------------------------------------------------------------------
+
+# Réponse PIA valide : addr(1) + 0x04(1) + byte_count(1=0x24) + data(36) + crc(2) = 41 bytes
+_PIA_RESPONSE_BYTES = 41
+# Hex chars for a valid PIA response: 41 bytes × 2 = 82 hex chars
+_PIA_RESPONSE_HEX_LEN = _PIA_RESPONSE_BYTES * 2
+
+
+def discover_bms_address(send_fn, port, baudrate=19200, max_addr=0x0F):
+    """
+    Scan les adresses Modbus 0x00 à max_addr pour trouver un BMS.
+
+    Envoie une commande PIA (read 18 registres depuis 0x1000) à chaque
+    adresse et vérifie si la réponse est une trame Modbus RTU valide
+    avec le bon nombre de bytes de données.
+
+    Args:
+        send_fn:  Callable (commands, port, baudrate) -> [response_hex_str, ...]
+        port:     Port série (ex: "/dev/ttyUSB0")
+        baudrate: Débit en bauds
+        max_addr: Adresse maximale à tester (défaut 0x0F)
+
+    Returns:
+        (int | None) Adresse trouvée, ou None si aucune.
+    """
+    _LOGGER.info("Scanning for BMS on %s (addresses 0x00–0x%02X)...", port, max_addr)
+
+    for addr in range(max_addr + 1):
+        cmd = build_read_command(addr, 0x1000, 0x12)
+        responses = send_fn([cmd], port, baudrate)
+
+        if not responses or not responses[0]:
+            _LOGGER.debug("Address 0x%02X: no response", addr)
+            continue
+
+        response = responses[0]
+
+        # Vérification rapide : longueur suffisante ?
+        if len(response) < _PIA_RESPONSE_HEX_LEN:
+            _LOGGER.debug(
+                "Address 0x%02X: response too short (%d chars, expected %d)",
+                addr, len(response), _PIA_RESPONSE_HEX_LEN
+            )
+            continue
+
+        # Vérification : le premier byte doit correspondre à l'adresse
+        if not response.startswith(f"{addr:02x}"):
+            _LOGGER.debug(
+                "Address 0x%02X: response starts with unexpected addr byte 0x%s",
+                addr, response[:2]
+            )
+            continue
+
+        # Vérification : function code doit être 0x04
+        if response[2:4] != "04":
+            _LOGGER.debug(
+                "Address 0x%02X: unexpected function code 0x%s",
+                addr, response[2:4]
+            )
+            continue
+
+        # Vérification : byte_count doit être 0x24 (36 bytes de données pour PIA)
+        if response[4:6] != "24":
+            _LOGGER.debug(
+                "Address 0x%02X: unexpected byte_count 0x%s",
+                addr, response[4:6]
+            )
+            continue
+
+        # Vérification CRC
+        if not verify_crc(response):
+            _LOGGER.debug("Address 0x%02X: CRC invalid", addr)
+            continue
+
+        _LOGGER.info(
+            "BMS found at address 0x%02X — valid PIA response (%d chars)",
+            addr, len(response)
+        )
+        return addr
+
+    _LOGGER.warning(
+        "No BMS found on %s scanning addresses 0x00–0x%02X",
+        port, max_addr
+    )
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Conversion de types Modbus
 # ---------------------------------------------------------------------------
 

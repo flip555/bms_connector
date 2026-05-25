@@ -40,10 +40,15 @@ def send_serial_command(commands, port, baudrate=19200, timeout=2):
 
                 ser.reset_input_buffer()
                 ser.write(cmd_bytes)
+                _LOGGER.debug("Sent raw (%d bytes): %s", len(cmd_bytes), cmd_bytes.hex())
                 time.sleep(0.5)
 
-                response = ser.read(ser.in_waiting).hex()
-                _LOGGER.debug("Response: %s", response)
+                raw_bytes = ser.read(ser.in_waiting)
+                response = raw_bytes.hex()
+                if raw_bytes:
+                    _LOGGER.debug("Raw response (%d bytes): %s", len(raw_bytes), response)
+                else:
+                    _LOGGER.warning("Empty response — BMS may not be responding at configured address")
                 responses.append(response)
 
     except serial.SerialException as e:
@@ -79,6 +84,7 @@ def send_telnet_command(commands: List[str], host: str, port: int = 23, timeout:
                     continue
 
                 tn.write(cmd_bytes)
+                _LOGGER.debug("Sent telnet raw (%d bytes): %s", len(cmd_bytes), cmd_bytes.hex())
                 time.sleep(0.5)
 
                 # Receive response with silence detection
@@ -102,7 +108,10 @@ def send_telnet_command(commands: List[str], host: str, port: int = 23, timeout:
 
                 raw = b"".join(messages)
                 response = raw.hex()
-                _LOGGER.debug("Response: %s", response)
+                if raw:
+                    _LOGGER.debug("Telnet raw response (%d bytes): %s", len(raw), response)
+                else:
+                    _LOGGER.warning("Telnet empty response — BMS may not be responding at configured address")
                 responses.append(response)
 
         finally:
