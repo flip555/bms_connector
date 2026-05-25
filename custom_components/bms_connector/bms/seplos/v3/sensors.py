@@ -1,28 +1,15 @@
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import async_generate_entity_id
-from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.entity import DeviceInfo
 
 from .data_parser import extract_data_from_message, build_commands_for_address, discover_bms_address
 from ....connector.local_serial.seplos_v3_local_serial import send_serial_command as v3_send_serial_command
 from ....connector.local_serial.seplos_v3_local_serial import send_telnet_command as v3_send_telnet_command
-import asyncio
 import logging
 from datetime import timedelta
-from ....const import (
-    NAME,
-    DOMAIN,
-    VERSION,
-    ATTRIBUTION,
-)
 from .const import (
-    ALARM_ATTRIBUTES,
     ALARM_MAPPINGS,
-    SYSTEM_ATTRIBUTES,
-    SETTINGS_ATTRIBUTES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,8 +25,7 @@ _MISSING = object()
 
 async def generate_sensors(hass, bms_type, connector_info, config_battery_address,
                             sensor_prefix, entry_id, async_add_entities, poll_interval=10):
-    """
-    Génère et enregistre tous les capteurs pour UNE adresse de batterie.
+    """Génère et enregistre tous les capteurs pour UNE adresse de batterie.
 
     config_battery_address doit être un entier (ex: 1 pour l'adresse Modbus 0x01).
     Pour ajouter une seconde batterie, appeler generate_sensors une deuxième fois
@@ -69,8 +55,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
     # ------------------------------------------------------------------
 
     async def async_update_data():
-        """
-        Interroge la batterie via le bus RS485 en utilisant son adresse Modbus
+        """Interroge la batterie via le bus RS485 en utilisant son adresse Modbus
         propre (config_battery_address), puis parse les réponses.
 
         IMPORTANT : on n'utilise PAS l'adresse 0x00 (broadcast) qui ferait
@@ -425,8 +410,7 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         return self._unit
 
     def get_value(self, data_object):
-        """
-        Récupère la valeur d'un attribut depuis un objet de données.
+        """Récupère la valeur d'un attribut depuis un objet de données.
 
         Retourne _MISSING si l'objet est None ou si l'attribut n'existe pas
         dans cet objet — ce qui permet à state() de continuer à chercher

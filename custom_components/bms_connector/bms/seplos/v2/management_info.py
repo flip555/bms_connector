@@ -23,10 +23,10 @@ def decode_fiveone(hex_string):
 
     # Convert bytes to ASCII strings
     result.device_name = device_name_bytes.decode('ascii')
-    
+
     # Interpret the software version correctly
     software_version = int.from_bytes(software_version_bytes, byteorder='big') / 1000 * 4  # Really unsure if this is correct ... my version is 16.4 so * 4 made 4.1 16.4
-    result.software_version = "{:.1f}".format(software_version)
+    result.software_version = f"{software_version:.1f}"
 
     result.manufacturer_name = manufacturer_name_bytes.decode('ascii')
 

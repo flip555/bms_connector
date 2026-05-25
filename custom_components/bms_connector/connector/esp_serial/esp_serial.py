@@ -1,5 +1,4 @@
 import socket
-import time
 import logging
 
 # Configure the logger
@@ -32,7 +31,7 @@ def communicate_with_esphome(ip, port, commands, timeout):
 
     except KeyboardInterrupt:
         _LOGGER.debug("Connection closed by user.")
-    except socket.timeout:
+    except TimeoutError:
         _LOGGER.debug("Timeout (%s seconds) exceeded while waiting for a response.", timeout)
     except Exception as e:
         _LOGGER.debug("An error occurred: %s", e)

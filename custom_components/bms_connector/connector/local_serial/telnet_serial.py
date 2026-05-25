@@ -1,15 +1,13 @@
 """Telnet Serial connector for Seplos V2 - Ported from Home Energy Hub"""
 
-import asyncio
 import logging
 import telnetlib
 import time
-from typing import List
 
 _LOGGER = logging.getLogger(__name__)
 
 # Synchronous send function (called via executor_job)
-def send_telnet_command(commands: List[str], host: str, port: int = 23, timeout: int = 8) -> List[str]:
+def send_telnet_command(commands: list[str], host: str, port: int = 23, timeout: int = 8) -> list[str]:
     """Send commands via telnet and collect responses."""
     responses = []
     _LOGGER.debug("Connecting to %s:%s", host, port)

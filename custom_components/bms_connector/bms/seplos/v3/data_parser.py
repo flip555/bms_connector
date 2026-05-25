@@ -1,5 +1,4 @@
-"""
-Modbus RTU response parser for Seplos BMS V3 (PIA / PIB tables).
+"""Modbus RTU response parser for Seplos BMS V3 (PIA / PIB tables).
 
 PIA  — registers 0x1000–0x1011 (18 regs) — pack-level data
 PIB  — registers 0x1100–0x1119 (26 regs) — cell voltages + temperatures
@@ -47,8 +46,7 @@ def verify_crc(frame_hex: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def build_read_command(addr: int, register: int, count: int) -> str:
-    """
-    Build a Modbus RTU 0x04 (Read Input Registers) command with CRC.
+    """Build a Modbus RTU 0x04 (Read Input Registers) command with CRC.
 
     Args:
         addr:     Slave address (0x01–0x7F).
@@ -57,6 +55,7 @@ def build_read_command(addr: int, register: int, count: int) -> str:
 
     Returns:
         Complete command as a hex string (without spaces), CRC included.
+
     """
     payload = bytes([addr, 0x04]) + struct.pack('>HH', register, count)
     crc = modbus_crc(payload)
@@ -67,8 +66,7 @@ def build_read_command(addr: int, register: int, count: int) -> str:
 
 
 def build_commands_for_address(battery_addr: int) -> list:
-    """
-    Build PIA and PIB commands for a given battery address.
+    """Build PIA and PIB commands for a given battery address.
 
     PIA : register 0x1000, 18 registers  (0x12) — pack data
     PIB : register 0x1100, 26 registers  (0x1A) — cell voltages + temps
@@ -91,8 +89,7 @@ _PIA_RESPONSE_HEX_LEN = _PIA_RESPONSE_BYTES * 2
 
 
 def discover_bms_address(send_fn, port, baudrate=19200, max_addr=0x0F):
-    """
-    Scan Modbus addresses 0x00–max_addr to find a BMS.
+    """Scan Modbus addresses 0x00–max_addr to find a BMS.
 
     Sends a PIA command to each address and validates the response
     (CRC, frame structure, expected byte count).
@@ -105,6 +102,7 @@ def discover_bms_address(send_fn, port, baudrate=19200, max_addr=0x0F):
 
     Returns:
         (int | None) Found address, or None if no BMS responds.
+
     """
     _LOGGER.info("Scanning for BMS on %s (addresses 0x00–0x%02X)...", port, max_addr)
 
@@ -173,13 +171,13 @@ def discover_bms_address(send_fn, port, baudrate=19200, max_addr=0x0F):
 # ---------------------------------------------------------------------------
 
 def convert_bytes_to_data(data_type: str, byte1: int, byte2: int):
-    """
-    Convert two bytes (MSB, LSB) to a typed value.
+    """Convert two bytes (MSB, LSB) to a typed value.
 
     Args:
         data_type: "UINT16" or "INT16"
         byte1:     Most-significant byte.
         byte2:     Least-significant byte.
+
     """
     if data_type == "UINT16":
         return (byte1 << 8) | byte2
@@ -284,8 +282,7 @@ class V3PIBTableData:
 # ---------------------------------------------------------------------------
 
 def decode_pia_table(response: str):
-    """
-    Decode the Modbus response to a PIA command (registers 0x1000–0x1011).
+    """Decode the Modbus response to a PIA command (registers 0x1000–0x1011).
 
     Frame layout:
         [addr, 0x04, LEN, DATA..., CRC_lo, CRC_hi]
@@ -370,8 +367,7 @@ def decode_pia_table(response: str):
 # ---------------------------------------------------------------------------
 
 def decode_pib_table(response: str):
-    """
-    Decode the Modbus response to a PIB command (registers 0x1100–0x1119).
+    """Decode the Modbus response to a PIB command (registers 0x1100–0x1119).
 
     Frame layout:
         [addr, 0x04, LEN, DATA..., CRC_lo, CRC_hi]
@@ -458,8 +454,7 @@ def decode_pib_table(response: str):
 
 def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=True,
                                debug=True, config_battery_address=None):
-    """
-    Parse PIA + PIB Modbus responses and return structured data.
+    """Parse PIA + PIB Modbus responses and return structured data.
 
     Args:
         msg:                     List of 2 hex strings (PIA response, PIB response).
@@ -470,6 +465,7 @@ def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=
 
     Returns:
         Tuple (battery_address, pia_data, pib_data, [], []).
+
     """
     # Normalise address for display
     if isinstance(config_battery_address, int):

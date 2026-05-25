@@ -195,22 +195,22 @@ def decode_fourseven(hex_string):
     _ver = hex_string[1]
     _adr = hex_string[2]
     _infoflag = hex_string[3]
-    
+
     # Extract length correctly
     length = int.from_bytes(hex_string[4:6], byteorder='big')
-    
+
     # Extract datai correctly as bytes
     datai_start = 2
     datai_end = datai_start + length
     datai_bytes = hex_string[datai_start:datai_end]
-    
+
     _chksum = hex_string[-4:-2]
     _eoi = hex_string[-2]
 
 
     # Convert DATAI to human-readable format
     datai_values = [
-        int.from_bytes(datai_bytes[i:i+2], byteorder='big') 
+        int.from_bytes(datai_bytes[i:i+2], byteorder='big')
         for i in range(0, len(datai_bytes), 2)
     ]
 
@@ -477,7 +477,7 @@ def decode_fourseven(hex_string):
         # Compensation point 2 impedance
         int.from_bytes(datai_bytes[172:174], byteorder='big')
 
-    ]      
+    ]
 
     # Assign the calculated values to the result object
     result.monomer_high_voltage_alarm = datai_values[0]

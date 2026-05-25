@@ -21,7 +21,7 @@ def interpret_alarm(event, value):
 def extract_alarms(data):
     battery_address, telemetry, alarms, system_details, protection_settings = data
     return alarms
-    
+
 def battery_watts(data):
     telemetry = extract_data(data)
     volts = getattr(telemetry, 'portVoltage', 0.0)
@@ -59,7 +59,7 @@ def full_charge_watts(data):
 
 def get_cell_extremes_and_difference(data):
     telemetry = extract_data(data)
-    cell_voltages = getattr(telemetry, f"cellVoltage", 0.0)
+    cell_voltages = getattr(telemetry, "cellVoltage", 0.0)
     highest_cell_voltage = max(cell_voltages)
     lowest_cell_voltage = min(cell_voltages)
     highest_cell_number = cell_voltages.index(highest_cell_voltage) + 1
@@ -114,8 +114,7 @@ def lowest_temp_sensor(data):
     return "N/A"
 
 def balancer_active(cell_number, data):
-    """
-    Check if a specific cell's balancer is active using direct bitmask operations.
+    """Check if a specific cell's balancer is active using direct bitmask operations.
     Cells 1-8 use equilibriumState0 (bits 0-7), cells 9-16 use equilibriumState1 (bits 0-7).
     """
     alarms = extract_alarms(data)

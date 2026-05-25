@@ -9,7 +9,7 @@ BMS_TYPE_DEFAULTS = {
     "SEPLV3": {"bms_name": "SEP BMS V3 (SEPLV3)", "default_prefix": "Seplos BMS V3", "default_address": "0x01"},
 }
 
- 
+
 # Commandes Telemetry format PYLON — packs 00 à 15
 # (NON utilisées pour SEPLOS V3 Modbus RTU — voir data_parser.build_commands_for_address)
 TELEMETRY_COMMANDS = {
@@ -30,7 +30,7 @@ TELEMETRY_COMMANDS = {
     14: "~20004642E00214FD32\r",
     15: "~20004642E00215FD31\r",
 }
- 
+
 # Commandes Teledata format PYLON — packs 00 à 15
 # (NON utilisées pour SEPLOS V3 Modbus RTU)
 TELEDATA_CODES = {
@@ -51,30 +51,30 @@ TELEDATA_CODES = {
     14: "~20004644E00214FD30\r",
     15: "~20004644E00215FD2F\r",
 }
- 
+
 # ---------------------------------------------------------------------------
 # Registres Modbus RTU SEPLOS V3 (pour référence)
 # ---------------------------------------------------------------------------
- 
+
 # Pack Info A — registres 0x1000 à 0x1011
 MODBUS_PIA_START_REG   = 0x1000
 MODBUS_PIA_REG_COUNT   = 0x12   # 18 registres
- 
+
 # Pack Info B — registres 0x1100 à 0x1119
 MODBUS_PIB_START_REG   = 0x1100
 MODBUS_PIB_REG_COUNT   = 0x1A   # 26 registres
- 
+
 # Pack Info C (alarmes bit-field) — registres 0x1200+
 MODBUS_PIC_START_REG   = 0x1200
 MODBUS_PIC_REG_COUNT   = 0x90   # 144 coils (commande 0x01)
- 
+
 # EMS Info A — registres 0x2000+
 MODBUS_EIA_START_REG   = 0x2000
- 
+
 # ---------------------------------------------------------------------------
 # Attributs exposés par les capteurs
 # ---------------------------------------------------------------------------
- 
+
 ALARM_ATTRIBUTES = [
     "cellAlarm", "tempAlarm", "currentAlarm", "voltageAlarm",
     "customAlarms", "alarmEvent0", "alarmEvent1", "alarmEvent2",
@@ -82,13 +82,13 @@ ALARM_ATTRIBUTES = [
     "alarmEvent7", "onOffState", "equilibriumState0", "equilibriumState1",
     "systemState", "disconnectionState0", "disconnectionState1",
 ]
- 
+
 SYSTEM_ATTRIBUTES = [
     "device_name",
     "software_version",
     "manufacturer_name",
 ]
- 
+
 SETTINGS_ATTRIBUTES = [
     "overcurrent_delay_recovery",
     "total_voltage_overvoltage_protection",
@@ -103,11 +103,11 @@ SETTINGS_ATTRIBUTES = [
     "battery_low_voltage_forbidden_charging",
     "total_pressure_high_pressure_alarm",
 ]
- 
+
 # ---------------------------------------------------------------------------
 # Correspondances alarmes → descriptions bit par bit
 # ---------------------------------------------------------------------------
- 
+
 ALARM_MAPPINGS = {
     "alarmEvent0": [
         "No Alarm",

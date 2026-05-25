@@ -1,5 +1,4 @@
-"""
-Modbus RTU serial/Telnet transport for Seplos BMS V3.
+"""Modbus RTU serial/Telnet transport for Seplos BMS V3.
 
 RS485 half-duplex handling:
   - reset_input_buffer() before each command
@@ -15,7 +14,6 @@ import logging
 import struct
 import time
 import telnetlib
-from typing import List
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,8 +53,7 @@ def _frame_crc_ok(frame: bytes) -> bool:
 # ---------------------------------------------------------------------------
 
 def _expected_data_len(command_hex: str) -> int:
-    """
-    Derive the expected response data byte count from a Modbus command.
+    """Derive the expected response data byte count from a Modbus command.
 
     A Read Input Registers command (0x04) has the register count at
     bytes [4:6] (big-endian). Each register is 2 bytes → data_len = count * 2.
@@ -71,8 +68,7 @@ def _expected_data_len(command_hex: str) -> int:
 
 def _read_modbus_frame(ser, expected_addr: int, expected_data_len: int,
                        sync_timeout: float = 2.0) -> bytes:
-    """
-    Read one Modbus RTU response frame with byte-level synchronisation.
+    """Read one Modbus RTU response frame with byte-level synchronisation.
 
     Phase 1 — byte-by-byte sync on [expected_addr, 0x04]
     Phase 2 — read LEN byte, validate it
@@ -87,6 +83,7 @@ def _read_modbus_frame(ser, expected_addr: int, expected_data_len: int,
     Returns:
         The complete frame including addr/cmd/len/data/crc, or b'' if
         no valid frame was found within the timeout.
+
     """
     deadline = time.monotonic() + sync_timeout
 
@@ -165,8 +162,7 @@ def _read_modbus_frame(ser, expected_addr: int, expected_data_len: int,
 # ---------------------------------------------------------------------------
 
 def send_serial_command(commands, port, baudrate=19200, timeout=2):
-    """
-    Send Modbus RTU commands over RS485 and return hex-string responses.
+    """Send Modbus RTU commands over RS485 and return hex-string responses.
 
     Each command is sent as raw binary. RS485 half-duplex echo is consumed
     explicitly, then the response is read with frame-level synchronisation
@@ -181,6 +177,7 @@ def send_serial_command(commands, port, baudrate=19200, timeout=2):
     Returns:
         List of hex strings. One element per command — empty string if a
         valid response could not be obtained.
+
     """
     responses = []
     _LOGGER.debug("send_serial_command: commands=%s port=%s", commands, port)
@@ -271,10 +268,9 @@ def send_serial_command(commands, port, baudrate=19200, timeout=2):
 # Telnet transport
 # ---------------------------------------------------------------------------
 
-def send_telnet_command(commands: List[str], host: str, port: int = 23,
-                        timeout: int = 8) -> List[str]:
-    """
-    Send Modbus RTU commands via Telnet and return hex-string responses.
+def send_telnet_command(commands: list[str], host: str, port: int = 23,
+                        timeout: int = 8) -> list[str]:
+    """Send Modbus RTU commands via Telnet and return hex-string responses.
 
     Telnet is full-duplex so there is no RS485 echo to consume. Responses
     are read with silence detection (900ms of no data = end of frame).
@@ -288,6 +284,7 @@ def send_telnet_command(commands: List[str], host: str, port: int = 23,
     Returns:
         List of hex strings. One element per command — empty string if
         a response could not be obtained.
+
     """
     responses = []
     _LOGGER.debug("send_telnet_command: connecting to %s:%s", host, port)
@@ -334,11 +331,7 @@ def send_telnet_command(commands: List[str], host: str, port: int = 23,
                 if raw:
                     _LOGGER.debug("Telnet response (%d bytes): %s", len(raw), response)
                 else:
-                    _LOGGER.warning(
-                        "Telnet empty response for addr=0x%02X — "
-                        "check wiring and BMS address",
-                        expected_addr if 'expected_addr' in dir() else ''
-                    )
+                    _LOGGER.warning("Telnet empty response — check wiring and BMS address")
                 responses.append(response)
 
         finally:

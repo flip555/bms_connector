@@ -1,27 +1,16 @@
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import async_generate_entity_id
-from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.entity import DeviceInfo
 
 from .data_parser import extract_data_from_message
 from ....connector import get_serial_send_function
-import asyncio
 import logging
 from datetime import timedelta
-from ....const import (
-    NAME,
-    DOMAIN,
-    VERSION,
-    ATTRIBUTION,
-)
 from .const import (
     ALARM_ATTRIBUTES,
     ALARM_MAPPINGS,
     SYSTEM_ATTRIBUTES,
-    SETTINGS_ATTRIBUTES,
 )
 from .calc_functions import (
     battery_watts,
@@ -29,17 +18,11 @@ from .calc_functions import (
     capacity_watts,
     full_charge_amps,
     full_charge_watts,
-    get_cell_extremes_and_difference,
     highest_cell_voltage,
     lowest_cell_voltage,
     cell_voltage_difference,
     highest_cell_number,
     lowest_cell_number,
-    highest_temp,
-    lowest_temp,
-    delta_temp,
-    highest_temp_sensor,
-    lowest_temp_sensor,
     balancer_cell_1,
     balancer_cell_2,
     balancer_cell_3,
@@ -76,7 +59,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
                 _LOGGER.debug("Derived sensor '%s' calculated value: %s", self._name, result)
                 return result
             return super().state
-            
+
 
     async def async_update_data():
         #Need to generate these, they're all for 0x00 atm .... 42H, 44H, 47H, 51H
@@ -92,7 +75,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         send_func = get_serial_send_function(connector_info)
         telemetry_data_str = await hass.async_add_executor_job(send_func, commands)
         battery_address, telemetry, alarms, system_details, protection_settings = extract_data_from_message(telemetry_data_str, True, True, True)
-        if battery_address != config_battery_address: 
+        if battery_address != config_battery_address:
             _LOGGER.debug("Battery Pack: %s was not found. %s found instead. Skipping", config_battery_address, battery_address)
             pass
         else:
@@ -108,7 +91,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         update_interval=timedelta(seconds=poll_interval),
     )
     _LOGGER.debug("async_refresh data generate_sensors called")
-    await coordinator.async_refresh() 
+    await coordinator.async_refresh()
 
     all_sensors = (
         [SeplosBMSSensorBase(coordinator, connector_info, f"cellVoltage[{idx}]", f"Cell Voltage {idx+1}", "mV", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id) for idx in range(16)] +
@@ -299,7 +282,7 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         self._entry_id = entry_id
         self._is_settings = is_settings
         self._set_sensor_attributes(attribute)
-        
+
         # Set device info — split BMS and Settings into separate devices like HEH
         if is_settings:
             self._attr_device_info = DeviceInfo(
@@ -350,7 +333,7 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         prefix = f"{self._sensor_prefix} - {self._battery_address} -"
         return f"{prefix} {self._name}"
 
-        
+
     @property
     def unique_id(self):
         """Return a stable unique ID for this entity."""
@@ -370,12 +353,12 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
             value = self.get_value(telemetry_data) or self.get_value(alarms_data) or self.get_value(system_details_data) or self.get_value(protection_settings_data)
         else:
             value = self.get_value(self.coordinator.data)
-            
+
         # Interpret the value for alarm sensors
         if base_attribute in ALARM_ATTRIBUTES:
             interpreted_value = str(self.interpret_alarm(base_attribute, value))
             _LOGGER.debug("Interpreted value for %s: %s", base_attribute, interpreted_value)
-            return interpreted_value   
+            return interpreted_value
         if value is None or value == '':
             if base_attribute == 'current':
                 _LOGGER.debug("Current seems to be None, setting to 0.00 to fix HA reporting as unknown")
@@ -383,7 +366,7 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
             else:
                 _LOGGER.warning("No data found in telemetry or alarms for %s", self._name)
                 return None
-                
+
 
 
         _LOGGER.debug("Sensor state for %s: %s", self._name, value)
