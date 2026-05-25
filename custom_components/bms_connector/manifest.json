@@ -11,5 +11,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/flip555/bms_connector/issues",
   "requirements": [],
-  "version": "1.2.3"
+  "version": "1.3.4"
 }
