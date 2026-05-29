@@ -15,7 +15,7 @@ from .const import (
 
 
 class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(self, user_input=None):
         return await self.async_step_bms_type()

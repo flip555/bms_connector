@@ -319,6 +319,8 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, port, attribute, name, unit=None,
                  icon=None, battery_address=None, sensor_prefix=None, entry_id=None):
         super().__init__(coordinator)
+        # Entity name already includes prefix; prevent HA 2024+ from doubling.
+        self._attr_has_entity_name = False
         self._port = port
         self._attribute = attribute
         self._name = name
