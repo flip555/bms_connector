@@ -1,7 +1,7 @@
 # const.py
 NAME = "BMS Connector"
 DOMAIN = "bms_connector"
-VERSION = "1.3.4"
+VERSION = "1.4.0"
 ATTRIBUTION = "Integration for BMS via serial communication."
 
 CONF_CONNECTION_TYPE = "connection_type"
