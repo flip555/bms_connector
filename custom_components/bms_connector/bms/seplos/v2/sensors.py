@@ -109,7 +109,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
             SeplosBMSSensorBase(coordinator, connector_info, "capacity", "Capacity", "Ah", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id),
             SeplosBMSSensorBase(coordinator, connector_info, "soc", "State of Charge", "%", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id),
             SeplosBMSSensorBase(coordinator, connector_info, "ratedCapacity", "Rated Capacity", "Ah", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id),
-            SeplosBMSSensorBase(coordinator, connector_info, "cycles", "Cycles", "", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id),
+            SeplosBMSSensorBase(coordinator, connector_info, "cycles", "Cycles", None, battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id),
             SeplosBMSSensorBase(coordinator, connector_info, "soh", "State of Health", "%", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id),
             SeplosBMSSensorBase(coordinator, connector_info, "portVoltage", "Port Voltage", "V", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id),
             SeplosBMSSensorBase(coordinator, connector_info, "currentAlarm", "Current Alarm", "", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id),
@@ -198,11 +198,11 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         SeplosBMSSensorBase(coordinator, connector_info, "equalization_closing_pressure_difference", "Equalization Closing Pressure Difference", "V", "mdi:flash-alert", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "static_equilibrium_time", "Static Equilibrium Time", "When", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "battery_number_in_series", "Battery Number in Series", "String", "mdi:battery", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
-        SeplosBMSSensorBase(coordinator, connector_info, "charge_overcurrent_delay", "Charge Overcurrent Delay", "S", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
-        SeplosBMSSensorBase(coordinator, connector_info, "discharge_overcurrent_delay", "Discharge Overcurrent Delay", "S", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
+        SeplosBMSSensorBase(coordinator, connector_info, "charge_overcurrent_delay", "Charge Overcurrent Delay", "s", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
+        SeplosBMSSensorBase(coordinator, connector_info, "discharge_overcurrent_delay", "Discharge Overcurrent Delay", "s", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "transient_overcurrent_delay", "Transient Overcurrent Delay", "ms", "mdi:timer", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "overcurrent_recovery_times", "Overcurrent Delay Recovery Times", "times", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
-        SeplosBMSSensorBase(coordinator, connector_info, "charge_current_limit_delay", "Charge Current Limit Delay", "Minutes", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
+        SeplosBMSSensorBase(coordinator, connector_info, "charge_current_limit_delay", "Charge Current Limit Delay", "min", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "charge_activation_delay", "Charge Activation Delay", "Minutes", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "charging_activation_interval", "Charging Activation Interval", "When", "mdi:timer", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "charge_activation_times", "Charge Activation Times", "times", "mdi:timer", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
@@ -325,7 +325,8 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
             self._attr_device_class = SensorDeviceClass.BATTERY
             self._attr_state_class = SensorStateClass.MEASUREMENT
         elif 'capacity' in check and 'watts' not in check:
-            pass  # capacity in Ah - no state class needed
+            # Match HEH: capacity sensors need MEASUREMENT state class
+            self._attr_state_class = SensorStateClass.MEASUREMENT
         elif 'cycles' in check:
             self._attr_state_class = SensorStateClass.TOTAL_INCREASING
 

@@ -206,7 +206,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         ),
         SeplosBMSSensorBase(
             coordinator, connector_info, "cycle",
-            "Cycle", "", "mdi:numeric",
+            "Cycle", None, "mdi:numeric",
             battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
         ),
         SeplosBMSSensorBase(
@@ -362,7 +362,8 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
             self._attr_device_class = SensorDeviceClass.BATTERY
             self._attr_state_class = SensorStateClass.MEASUREMENT
         elif 'capacity' in check and 'watts' not in check:
-            pass  # capacity in Ah - no state class needed
+            # Match HEH: capacity sensors need MEASUREMENT state class
+            self._attr_state_class = SensorStateClass.MEASUREMENT
         elif 'cycles' in check:
             self._attr_state_class = SensorStateClass.TOTAL_INCREASING
 
