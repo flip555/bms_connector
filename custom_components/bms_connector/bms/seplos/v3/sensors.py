@@ -6,6 +6,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from .data_parser import extract_data_from_message, build_commands_for_address, discover_bms_address
 from ....connector.local_serial.seplos_v3_local_serial import send_serial_command as v3_send_serial_command
 from ....connector.local_serial.seplos_v3_local_serial import send_telnet_command as v3_send_telnet_command
+import functools
 import logging
 from datetime import timedelta
 from .const import (
@@ -17,6 +18,9 @@ _LOGGER = logging.getLogger(__name__)
 # Sentinel pour distinguer "attribut absent" (→ chercher dans l'objet suivant)
 # de "attribut présent mais valant 0" (valeur numérique valide à retourner)
 _MISSING = object()
+
+# Per-attempt read budget while scanning for an unknown BMS address.
+_DISCOVERY_TIMEOUT = 2
 
 
 # ---------------------------------------------------------------------------
@@ -107,9 +111,25 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
                 "No response from configured address 0x%02X — scanning for BMS...",
                 addr_int
             )
-            discovered = await hass.async_add_executor_job(
-                discover_bms_address, v3_send_serial_command, serial_port, serial_baud
-            )
+            # discover_bms_address calls send_fn(cmds, arg2, arg3) positionally,
+            # matching send_telnet_command(commands, host, port) and
+            # send_serial_command(commands, port, baudrate).
+            #
+            # The scan tries every address in turn, and over TCP each attempt is
+            # its own connection. Cap the per-attempt read so a silent bus costs
+            # seconds rather than minutes of an executor thread.
+            if connector_type == "telnet":
+                scan_fn = functools.partial(v3_send_telnet_command,
+                                            timeout=_DISCOVERY_TIMEOUT)
+                discovered = await hass.async_add_executor_job(
+                    discover_bms_address, scan_fn,
+                    telnet_host, telnet_port
+                )
+            else:
+                discovered = await hass.async_add_executor_job(
+                    discover_bms_address, v3_send_serial_command,
+                    serial_port, serial_baud
+                )
             if discovered is not None and discovered != addr_int:
                 _LOGGER.warning(
                     "BMS found at address 0x%02X (configured was 0x%02X) — "
