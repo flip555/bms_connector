@@ -11,16 +11,24 @@ RS485 half-duplex handling:
 
 import serial
 import logging
+import socket
 import struct
 import time
-import telnetlib
 
 _LOGGER = logging.getLogger(__name__)
 
-# Known data-byte counts for V3 Modbus responses
-# PIA : 18 registers x 2 = 36 = 0x24
-# PIB : 26 registers x 2 = 52 = 0x34
+# Known data-byte counts for V3 Modbus responses, per function code.
+# 0x04 read input registers — PIA 18 regs x 2 = 36 = 0x24
+#                             PIB 26 regs x 2 = 52 = 0x34
+_VALID_DATA_LENS_BY_FUNCTION = {
+    0x04: (0x24, 0x34),
+}
 _VALID_DATA_LENS = (0x24, 0x34)
+
+
+def _valid_data_lens(function_code: int) -> tuple:
+    """Response data-byte counts that are plausible for this function code."""
+    return _VALID_DATA_LENS_BY_FUNCTION.get(function_code, _VALID_DATA_LENS)
 
 # ---------------------------------------------------------------------------
 # CRC-16 Modbus
@@ -52,6 +60,14 @@ def _frame_crc_ok(frame: bytes) -> bool:
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _command_function_code(command_hex: str) -> int:
+    """Return the Modbus function code of a command, defaulting to 0x04."""
+    try:
+        return bytes.fromhex(command_hex)[1]
+    except Exception:
+        return 0x04
+
+
 def _expected_data_len(command_hex: str) -> int:
     """Derive the expected response data byte count from a Modbus command.
 
@@ -67,10 +83,11 @@ def _expected_data_len(command_hex: str) -> int:
 
 
 def _read_modbus_frame(ser, expected_addr: int, expected_data_len: int,
-                       sync_timeout: float = 2.0) -> bytes:
+                       sync_timeout: float = 2.0,
+                       function_code: int = 0x04) -> bytes:
     """Read one Modbus RTU response frame with byte-level synchronisation.
 
-    Phase 1 — byte-by-byte sync on [expected_addr, 0x04]
+    Phase 1 — byte-by-byte sync on [expected_addr, function_code]
     Phase 2 — read LEN byte, validate it
     Phase 3 — read DATA + CRC, validate CRC
 
@@ -79,6 +96,8 @@ def _read_modbus_frame(ser, expected_addr: int, expected_data_len: int,
         expected_addr:      Expected slave address (e.g. 0x01).
         expected_data_len:  Expected data byte count (e.g. 36 for PIA).
         sync_timeout:       Total time to spend looking for a valid frame.
+        function_code:      Function code to sync on. Must match the command
+                            that was sent, or its response is never located.
 
     Returns:
         The complete frame including addr/cmd/len/data/crc, or b'' if
@@ -88,7 +107,7 @@ def _read_modbus_frame(ser, expected_addr: int, expected_data_len: int,
     deadline = time.monotonic() + sync_timeout
 
     while time.monotonic() < deadline:
-        # Phase 1 — find [addr, 0x04]
+        # Phase 1 — find [addr, function_code]
         addr_byte = ser.read(1)
         if not addr_byte:
             continue
@@ -98,7 +117,7 @@ def _read_modbus_frame(ser, expected_addr: int, expected_data_len: int,
         cmd_byte = ser.read(1)
         if not cmd_byte:
             continue
-        if cmd_byte[0] != 0x04:
+        if cmd_byte[0] != function_code:
             continue
 
         # Phase 2 — read LEN
@@ -109,11 +128,12 @@ def _read_modbus_frame(ser, expected_addr: int, expected_data_len: int,
 
         # Reject data lengths that aren't valid for this BMS family.
         # This filters out false-positive syncs on echo bytes where
-        # [addr, 0x04] appears by coincidence.
-        if data_len not in _VALID_DATA_LENS:
+        # [addr, function_code] appears by coincidence.
+        valid_lens = _valid_data_lens(function_code)
+        if data_len not in valid_lens:
             _LOGGER.debug(
                 "Sync false-positive — LEN=0x%02X not in %s, resyncing",
-                data_len, _VALID_DATA_LENS
+                data_len, valid_lens
             )
             continue
 
@@ -128,7 +148,7 @@ def _read_modbus_frame(ser, expected_addr: int, expected_data_len: int,
             continue
 
         # Phase 3 — read data + CRC
-        frame = bytes([expected_addr, 0x04, data_len]) + ser.read(data_len + 2)
+        frame = bytes([expected_addr, function_code, data_len]) + ser.read(data_len + 2)
 
         if len(frame) < 3 + data_len + 2:
             _LOGGER.warning(
@@ -204,9 +224,10 @@ def send_serial_command(commands, port, baudrate=19200, timeout=2):
 
                 expected_addr = cmd_bytes[0]
                 expected_data_len = _expected_data_len(command)
+                function_code = _command_function_code(command)
                 _LOGGER.debug(
-                    "Expected addr=0x%02X data_len=%d",
-                    expected_addr, expected_data_len
+                    "Expected addr=0x%02X fn=0x%02X data_len=%d",
+                    expected_addr, function_code, expected_data_len
                 )
 
                 # --- Flush, write, consume echo ---
@@ -239,7 +260,8 @@ def send_serial_command(commands, port, baudrate=19200, timeout=2):
                     )
 
                 # --- Read Modbus response frame ---
-                raw = _read_modbus_frame(ser, expected_addr, expected_data_len)
+                raw = _read_modbus_frame(ser, expected_addr, expected_data_len,
+                                         function_code=function_code)
 
                 if not raw:
                     _LOGGER.warning(
@@ -264,81 +286,112 @@ def send_serial_command(commands, port, baudrate=19200, timeout=2):
     return responses
 
 
+
 # ---------------------------------------------------------------------------
-# Telnet transport
+# TCP ("Telnet") transport
 # ---------------------------------------------------------------------------
+
+class _SocketReader:
+    """Adapt a socket to the ``.read(n)`` interface _read_modbus_frame expects.
+
+    Reads are bounded by an absolute deadline, so a bus that keeps producing
+    bytes cannot hold a Home Assistant executor thread open indefinitely.
+    """
+
+    def __init__(self, sock, deadline: float):
+        self._sock = sock
+        self._deadline = deadline
+        self._buf = bytearray()
+
+    def read(self, n: int = 1) -> bytes:
+        while len(self._buf) < n:
+            remaining = self._deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            self._sock.settimeout(min(remaining, 0.5))
+            try:
+                chunk = self._sock.recv(4096)
+            except socket.timeout:
+                continue
+            except OSError:
+                break
+            if not chunk:
+                break
+            self._buf.extend(chunk)
+        out = bytes(self._buf[:n])
+        del self._buf[:n]
+        return out
+
 
 def send_telnet_command(commands: list[str], host: str, port: int = 23,
                         timeout: int = 8) -> list[str]:
-    """Send Modbus RTU commands via Telnet and return hex-string responses.
+    """Send Modbus RTU commands over TCP and return hex-string responses.
 
-    Telnet is full-duplex so there is no RS485 echo to consume. Responses
-    are read with silence detection (900ms of no data = end of frame).
+    Responses are located with the same byte-level frame synchronisation the
+    serial transport uses: sync on ``[addr, 0x04, LEN]``, validate CRC, and
+    skip frames belonging to another address or table. Unrelated traffic on
+    the bus is discarded rather than returned.
 
     Args:
         commands:  List of hex strings, each a complete Modbus RTU command.
-        host:      Telnet server address.
-        port:      Telnet server port (default 23).
-        timeout:   Per-command silence-detection timeout (default 8s).
+        host:      Gateway address.
+        port:      Gateway port (default 23).
+        timeout:   Per-command deadline in seconds (default 8).
 
     Returns:
-        List of hex strings. One element per command — empty string if
-        a response could not be obtained.
+        List of hex strings. One element per command -- empty string if a
+        valid response could not be obtained.
 
     """
-    responses = []
+    responses: list[str] = []
     _LOGGER.debug("send_telnet_command: connecting to %s:%s", host, port)
 
+    sock = None
     try:
-        tn = telnetlib.Telnet(host, port, timeout=5)
+        sock = socket.create_connection((host, port), timeout=5)
 
-        try:
-            for command in commands:
-                _LOGGER.debug("Sending: %s", command)
+        for command in commands:
+            try:
+                cmd_bytes = bytes.fromhex(command)
+            except ValueError as e:
+                _LOGGER.error("Invalid command: %s - %s", command, e)
+                responses.append("")
+                continue
 
-                try:
-                    cmd_bytes = bytes.fromhex(command)
-                except Exception as e:
-                    _LOGGER.error("Invalid command: %s — %s", command, e)
-                    responses.append("")
-                    continue
+            expected_addr = cmd_bytes[0]
+            expected_data_len = _expected_data_len(command)
 
-                tn.write(cmd_bytes)
-                _LOGGER.debug("Sent telnet raw (%d bytes): %s", len(cmd_bytes), cmd_bytes.hex())
-                time.sleep(0.5)
+            sock.sendall(cmd_bytes)
+            _LOGGER.debug("Sent raw (%d bytes): %s",
+                          len(cmd_bytes), cmd_bytes.hex())
 
-                # Receive with silence detection
-                chunks = []
-                last_data = time.monotonic()
-                deadline = last_data + timeout
+            reader = _SocketReader(sock, time.monotonic() + timeout)
+            raw = _read_modbus_frame(
+                reader, expected_addr, expected_data_len,
+                sync_timeout=timeout,
+                function_code=_command_function_code(command),
+            )
 
-                while time.monotonic() < deadline:
-                    try:
-                        chunk = tn.read_very_eager()
-                        if chunk:
-                            chunks.append(chunk)
-                            last_data = time.monotonic()
-                        else:
-                            if time.monotonic() - last_data > 0.9:
-                                break
-                    except EOFError:
-                        break
+            if raw:
+                _LOGGER.debug("Response OK addr=0x%02X (%d bytes): %s",
+                              expected_addr, len(raw), raw.hex())
+                responses.append(raw.hex())
+            else:
+                _LOGGER.warning(
+                    "No valid frame for addr=0x%02X - check the BMS address "
+                    "and that the gateway forwards RS485 continuously",
+                    expected_addr,
+                )
+                responses.append("")
 
-                    time.sleep(0.03)
-
-                raw = b"".join(chunks)
-                response = raw.hex()
-                if raw:
-                    _LOGGER.debug("Telnet response (%d bytes): %s", len(raw), response)
-                else:
-                    _LOGGER.warning("Telnet empty response — check wiring and BMS address")
-                responses.append(response)
-
-        finally:
-            tn.close()
-
-    except Exception as e:
-        _LOGGER.error("Telnet error on %s:%s — %s", host, port, e)
+    except OSError as e:
+        _LOGGER.error("TCP error on %s:%s - %s", host, port, e)
         return [""] * len(commands)
+    finally:
+        if sock is not None:
+            try:
+                sock.close()
+            except OSError:
+                pass
 
     return responses
