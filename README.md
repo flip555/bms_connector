@@ -11,7 +11,7 @@ Seplos battery data in Home Assistant — cell voltages, temperatures, current, 
 
 | BMS | USB-RS485 | RS485 → Ethernet |
 |---|---|---|
-| Seplos V2 (PACE) | ✅ tested | ✅ supported |
+| Seplos V2 | ✅ tested | ✅ supported |
 | Seplos V3 | ✅ tested | ✅ tested |
 
 Requires **Home Assistant 2025.1 or newer**.
@@ -28,7 +28,7 @@ Then add it from **Settings → Devices & Services → Add Integration → BMS C
 
 One integration entry drives one pack. For multi-pack V2 stacks, use the companion ESPHome component:
 
-**[flip555/seplos-v2-esp32-ble](https://github.com/flip555/seplos-v2-esp32-ble)** — Seplos / PACE V2 over Bluetooth LE on an ESP32.
+**[flip555/seplos-v2-esp32-ble](https://github.com/flip555/seplos-v2-esp32-ble)** — Seplos V2 over Bluetooth LE on an ESP32.
 
 ## Documentation
 
