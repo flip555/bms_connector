@@ -9,6 +9,7 @@ RS485 half-duplex handling:
   - CRC-16 Modbus validation on every received frame.
 """
 
+import contextlib
 import serial
 import logging
 import socket
@@ -311,7 +312,7 @@ class _SocketReader:
             self._sock.settimeout(min(remaining, 0.5))
             try:
                 chunk = self._sock.recv(4096)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             except OSError:
                 break
@@ -389,9 +390,7 @@ def send_telnet_command(commands: list[str], host: str, port: int = 23,
         return [""] * len(commands)
     finally:
         if sock is not None:
-            try:
+            with contextlib.suppress(OSError):
                 sock.close()
-            except OSError:
-                pass
 
     return responses
