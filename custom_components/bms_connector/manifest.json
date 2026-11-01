@@ -10,8 +10,6 @@
   "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/flip555/bms_connector/issues",
-  "requirements": [
-    "pyserial==3.5"
-  ],
+  "requirements": [],
   "version": "1.5.0"
 }
