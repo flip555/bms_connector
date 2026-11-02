@@ -32,7 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: config_entries.Co
             connector_info["timeout"] = 8
         else:
             connector_info["port"] = config_entry.data.get("connector_port")
-            connector_info["baudrate"] = 19200
+            connector_info["baudrate"] = config_entry.data.get("baud_rate") or 19200
 
         poll_interval = config_entry.data.get("poll_interval", 10)
         _LOGGER.debug("Sensor Prefix: %s", sensor_prefix)
@@ -57,4 +57,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: config_entries.Co
             _LOGGER.error("Unsupported BMS type")
 
     except Exception as e:
-        _LOGGER.error("Error setting up BMS sensors: %s", e)
+        target = (
+            config_entry.data.get("host")
+            or config_entry.data.get("connector_port")
+            or "unknown"
+        )
+        # Connectivity is probed in async_setup_entry, where HA allows
+        # ConfigEntryNotReady. A bad frame here is logged and leaves the
+        # platform idle until the next reload.
+        _LOGGER.error("Error setting up BMS sensors on %s: %s", target, e)

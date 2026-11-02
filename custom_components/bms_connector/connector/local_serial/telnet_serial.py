@@ -1,50 +1,71 @@
-"""Telnet Serial connector for Seplos V2 - Ported from Home Energy Hub"""
+"""Telnet/RS485-to-Ethernet connector for Seplos V2 - Ported from Home Energy Hub"""
 
+import contextlib
 import logging
-import telnetlib
+import socket
 import time
 
 _LOGGER = logging.getLogger(__name__)
 
-# Synchronous send function (called via executor_job)
-def send_telnet_command(commands: list[str], host: str, port: int = 23, timeout: int = 8) -> list[str]:
-    """Send commands via telnet and collect responses."""
-    responses = []
+# End-of-message heuristic for bridges that do not preserve Modbus framing.
+_SILENCE = 0.9
+
+
+def _read_until_silence(
+    sock: socket.socket, timeout: float, silence: float = _SILENCE
+) -> str:
+    """Collect ASCII text until the link goes quiet or the deadline expires."""
+    chunks: list[str] = []
+    deadline = time.monotonic() + timeout
+    last_data = time.monotonic()
+
+    while True:
+        now = time.monotonic()
+        if now - last_data > silence or now >= deadline:
+            break
+
+        sock.settimeout(min(silence, max(0.01, deadline - now)))
+        try:
+            chunk = sock.recv(4096)
+        except TimeoutError:
+            continue
+        except OSError:
+            break
+
+        if not chunk:
+            break
+
+        chunks.append(chunk.decode("ascii", errors="ignore"))
+        last_data = time.monotonic()
+
+    return "".join(chunks)
+
+
+def send_telnet_command(
+    commands: list[str], host: str, port: int = 23, timeout: int = 8
+) -> list[str]:
+    """Send commands over TCP and return the '~'-delimited BMS messages."""
+    responses: list[str] = []
     _LOGGER.debug("Connecting to %s:%s", host, port)
 
-    tn = telnetlib.Telnet(host, port, timeout=5)
-
+    sock = None
     try:
+        sock = socket.create_connection((host, port), timeout=5)
+
         for raw_cmd in commands:
-            tn.write(raw_cmd.encode('ascii'))
+            sock.sendall(raw_cmd.encode("ascii"))
             time.sleep(0.1)
 
-            # Receive response with silence detection
-            messages = []
-            last_data = time.perf_counter()
+            full = _read_until_silence(sock, timeout)
+            full = full.replace("\r", "").replace("\n", "")
+            responses.extend(f"~{part}" for part in full.split("~") if part)
 
-            while True:
-                try:
-                    chunk = tn.read_very_eager()
-                    if chunk:
-                        messages.append(chunk.decode('ascii', errors='ignore'))
-                        last_data = time.perf_counter()
-                    else:
-                        if time.perf_counter() - last_data > 0.9:
-                            break
-
-                    if time.perf_counter() - last_data > timeout:
-                        break
-                except EOFError:
-                    break
-
-                time.sleep(0.03)
-
-            full = ''.join(messages).replace('\r', '').replace('\n', '')
-            parts = [p for p in full.split('~') if p]
-            responses.extend(['~' + p for p in parts])
-
+    except OSError as err:
+        _LOGGER.error("TCP error on %s:%s - %s", host, port, err)
+        return responses
     finally:
-        tn.close()
+        if sock is not None:
+            with contextlib.suppress(OSError):
+                sock.close()
 
     return responses

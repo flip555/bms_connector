@@ -1,30 +1,78 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "Avant de continuer, veuillez confirmer que vous avez supprimé toutes les anciennes entrées ajoutées via l'addon 'seplos_bms_ha'. Le fait de laisser des anciennes entrées pourrait entraîner des conflits de nommage de capteurs avec la nouvelle version. Toutes les données stockées dans les anciens capteurs devraient être automatiquement adoptées par le nouvel addon.",
-                "data": {
-                    "confirm": "Veuillez confirmer que vous avez supprimé toutes les anciennes entrées ajoutées via l'addon 'seplos_bms_ha' avant de continuer !"
-                }
-            },
-            "bms_type": {
-                "description": "Veuillez sélectionner la version de votre BMS dans la liste ci-dessous. Si votre BMS ne figure pas dans la liste, il n'est actuellement pas pris en charge. Vous pouvez demander un support sur notre dépôt GitHub.",
-                "data": {
-                    "bms_type": "Veuillez sélectionner votre BMS"
-                }
-            },
-            "connector_port": {
-                "description": "Veuillez saisir le port de connexion de votre BMS. Par exemple, utilisez '/dev/ttyUSB0' pour les connexions série locales. Les ports de connexion ESPHome et Bluetooth pourraient être disponibles à l'avenir.",
-                "data": {
-                    "connector_port": "Veuillez saisir votre port de connexion"
-                }
-            },
-            "sensor_prefix": {
-                "description": "Veuillez entrer le préfixe de nommage de vos capteurs souhaité. Tous les capteurs incluront automatiquement l'adresse de la batterie dans leur nom et cela ne peut pas être supprimé.",
-                "data": {
-                    "sensor_prefix": "Veuillez entrer le préfixe de nommage de vos capteurs"
-                }
-            }
+  "config": {
+    "step": {
+      "user": {
+        "title": "Avant de commencer",
+        "description": "Avant de continuer, veuillez confirmer que vous avez supprimé toutes les anciennes entrées ajoutées via l'addon 'seplos_bms_ha'. Le fait de laisser des anciennes entrées pourrait entraîner des conflits de nommage de capteurs avec la nouvelle version. Toutes les données stockées dans les anciens capteurs devraient être automatiquement adoptées par le nouvel addon.",
+        "data": {
+          "confirm": "Veuillez confirmer que vous avez supprimé toutes les anciennes entrées ajoutées via l'addon 'seplos_bms_ha' avant de continuer !"
         }
+      },
+      "bms_type": {
+        "title": "Version du BMS",
+        "description": "Veuillez sélectionner la version de votre BMS dans la liste ci-dessous. Si votre BMS ne figure pas dans la liste, il n'est actuellement pas pris en charge. Vous pouvez demander un support sur notre dépôt GitHub.",
+        "data": {
+          "bms_type": "Veuillez sélectionner votre BMS"
+        }
+      },
+      "connection_type": {
+        "title": "Type de connexion",
+        "description": "Choisissez comment le BMS est connecté : adaptateur USB-RS485 local ou passerelle RS485-Ethernet via Telnet.",
+        "data": {
+          "connection_type": "Type de connexion"
+        }
+      },
+      "usb_config": {
+        "title": "Connexion série",
+        "description": "Périphérique série de l'adaptateur USB-RS485 et vitesse de liaison (Seplos V2 généralement 19200).",
+        "data": {
+          "connector_port": "Port série",
+          "baud_rate": "Débit"
+        }
+      },
+      "telnet_config": {
+        "title": "Passerelle Telnet",
+        "description": "Hôte et port TCP de la passerelle RS485-Ethernet (Waveshare, Elfin, etc.) en mode transparent.",
+        "data": {
+          "host": "Adresse de l'hôte",
+          "port": "Port TCP"
+        }
+      },
+      "sensor_prefix": {
+        "title": "Batterie et noms",
+        "description": "Adresse de la batterie (DIP) et préfixe utilisé pour tous les noms d'entités. Chaque capteur inclut automatiquement l'adresse de la batterie.",
+        "data": {
+          "battery_address": "Adresse de la batterie",
+          "sensor_prefix": "Préfixe des capteurs",
+          "poll_interval": "Intervalle d'interrogation (secondes)"
+        }
+      }
+    },
+    "error": {
+      "unique_id_conflict": "Une autre entrée utilise déjà cette adresse de batterie et cette connexion."
+    },
+    "abort": {
+      "already_configured": "Ce BMS est déjà configuré."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mettre à jour les paramètres du BMS",
+        "description": "Modifiez la connexion, l'adresse de la batterie, les noms ou l'intervalle d'interrogation sans supprimer l'entrée.",
+        "data": {
+          "battery_address": "Adresse de la batterie",
+          "sensor_prefix": "Préfixe des capteurs",
+          "poll_interval": "Intervalle d'interrogation (secondes)",
+          "connector_port": "Port série",
+          "baud_rate": "Débit",
+          "host": "Adresse de l'hôte",
+          "port": "Port TCP"
+        }
+      }
+    },
+    "error": {
+      "unique_id_conflict": "Une autre entrée utilise déjà cette adresse de batterie et cette connexion."
+    }
+  }
 }

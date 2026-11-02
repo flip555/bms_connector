@@ -1,30 +1,78 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "Před pokračováním potvrďte, že jste smazali všechny staré záznamy přidané pomocí doplňku 'seplos_bms_ha'. Ponechání starých záznamů může způsobit konflikty v pojmenování senzorů s novou verzí. Všechna data uložená v starých senzorech by měla být automaticky převzata novým doplňkem.",
-                "data": {
-                    "confirm": "Před pokračováním potvrďte, že jste smazali všechny staré záznamy přidané pomocí doplňku 'seplos_bms_ha'."
-                }
-            },
-            "bms_type": {
-                "description": "Vyberte prosím verzi vašeho BMS z níže uvedeného seznamu. Pokud váš BMS není uveden, není v současné době podporován. Můžete požádat o podporu na našem úložišti GitHub.",
-                "data": {
-                    "bms_type": "Vyberte prosím verzi vašeho BMS"
-                }
-            },
-            "connector_port": {
-                "description": "Zadejte prosím připojovací port pro váš BMS. Například použijte '/dev/ttyUSB0' pro lokální sériové připojení. Porty pro ESPHome a Bluetooth připojení mohou být k dispozici v budoucnosti.",
-                "data": {
-                    "connector_port": "Zadejte prosím váš připojovací port"
-                }
-            },
-            "sensor_prefix": {
-                "description": "Zadejte prosím požadovaný prefix pro pojmenování senzorů. Všechny senzory automaticky zahrnou adresu baterie jako součást svých názvů a nelze ji odstranit.",
-                "data": {
-                    "sensor_prefix": "Zadejte prosím požadovaný prefix senzoru"
-                }
-            }
+  "config": {
+    "step": {
+      "user": {
+        "title": "Než začnete",
+        "description": "Před pokračováním potvrďte, že jste smazali všechny staré záznamy přidané pomocí doplňku 'seplos_bms_ha'. Ponechání starých záznamů může způsobit konflikty v pojmenování senzorů s novou verzí. Všechna data uložená v starých senzorech by měla být automaticky převzata novým doplňkem.",
+        "data": {
+          "confirm": "Před pokračováním potvrďte, že jste smazali všechny staré záznamy přidané pomocí doplňku 'seplos_bms_ha'."
         }
+      },
+      "bms_type": {
+        "title": "Verze BMS",
+        "description": "Vyberte prosím verzi vašeho BMS z níže uvedeného seznamu. Pokud váš BMS není uveden, není v současné době podporován. Můžete požádat o podporu na našem úložišti GitHub.",
+        "data": {
+          "bms_type": "Vyberte prosím verzi vašeho BMS"
+        }
+      },
+      "connection_type": {
+        "title": "Typ připojení",
+        "description": "Zvolte, jak je BMS připojena: místní USB-RS485 adaptér nebo RS485-Ethernet brána přes Telnet.",
+        "data": {
+          "connection_type": "Typ připojení"
+        }
+      },
+      "usb_config": {
+        "title": "Sériové připojení",
+        "description": "Sériové zařízení USB-RS485 adaptéru a rychlost linky (Seplos V2 obvykle 19200).",
+        "data": {
+          "connector_port": "Sériový port",
+          "baud_rate": "Rychlost přenosu"
+        }
+      },
+      "telnet_config": {
+        "title": "Telnet brána",
+        "description": "Adresa a TCP port RS485-Ethernet brány (Waveshare, Elfin atd.) v transparentním režimu.",
+        "data": {
+          "host": "Adresa hostitele",
+          "port": "TCP port"
+        }
+      },
+      "sensor_prefix": {
+        "title": "Baterie a názvy",
+        "description": "Zadejte adresu baterie (DIP) a požadovaný prefix pro pojmenování senzorů. Všechny senzory automaticky zahrnou adresu baterie do svých názvů.",
+        "data": {
+          "battery_address": "Adresa baterie",
+          "sensor_prefix": "Prefix senzorů",
+          "poll_interval": "Interval dotazování (sekundy)"
+        }
+      }
+    },
+    "error": {
+      "unique_id_conflict": "Jiná položka již používá tuto adresu baterie a připojení."
+    },
+    "abort": {
+      "already_configured": "Tato BMS je již nakonfigurována."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Aktualizovat nastavení BMS",
+        "description": "Změňte připojení, adresu baterie, názvy nebo interval dotazování bez smazání položky.",
+        "data": {
+          "battery_address": "Adresa baterie",
+          "sensor_prefix": "Prefix senzorů",
+          "poll_interval": "Interval dotazování (sekundy)",
+          "connector_port": "Sériový port",
+          "baud_rate": "Rychlost přenosu",
+          "host": "Adresa hostitele",
+          "port": "TCP port"
+        }
+      }
+    },
+    "error": {
+      "unique_id_conflict": "Jiná položka již používá tuto adresu baterie a připojení."
+    }
+  }
 }
