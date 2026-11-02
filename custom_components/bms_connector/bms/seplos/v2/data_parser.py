@@ -3,13 +3,9 @@ from .settings_protection import decode_fourseven
 from .management_info import decode_fiveone
 from .telemetry import parse_telemetry_info
 from .alarms_teledata import parse_teledata_info
+from .commands import calc_check_sum
 
 _LOGGER = logging.getLogger(__name__)
-
-def calc_check_sum(s):
-    total_sum = sum(ord(c) for c in s)  # Sum up ASCII values directly
-    checksum_value = (total_sum ^ 0xFFFF) + 1
-    return format(checksum_value, 'X').zfill(4)  # Convert to uppercase hexadecimal and ensure it's 4 chars long
 
 def form_battery_id_str(address):
     return format(address, '02x')

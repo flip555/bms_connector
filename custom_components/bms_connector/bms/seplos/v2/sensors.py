@@ -3,6 +3,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers.entity import DeviceInfo
 
+from .commands import build_v2_commands
 from .data_parser import extract_data_from_message
 from ....connector import get_serial_send_function
 import asyncio
@@ -122,14 +123,8 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
 
     async def async_update_data():
         #Need to generate these, they're all for 0x00 atm .... 42H, 44H, 47H, 51H
-        V2_COMMAND_ARRAY = {
-            "0x00": ["~20004642E00200FD37\r", "~20004644E00200FD35\r", "~20004647E00200FD32\r", "~20004651E00200FD37\r"],
-            "0x01": ["~20004642E00215FD31\r", "~20004644E00200FD35\r", "~20004647E00200FD32\r", "~20004651E00200FD37\r"],
-            "0x02": ["~20004642E00200FD37\r", "~20004644E00200FD35\r", "~20004647E00200FD32\r", "~20004651E00200FD37\r"],
-            "0x03": ["~20004642E00200FD37\r", "~20004644E00200FD35\r", "~20004647E00200FD32\r", "~20004651E00200FD37\r"],
-        }
         _LOGGER.debug("BATTERY PACK SELECTED: %s", config_battery_address)
-        commands = V2_COMMAND_ARRAY[config_battery_address]
+        commands = build_v2_commands(config_battery_address)
 
         send_func = get_serial_send_function(connector_info)
 

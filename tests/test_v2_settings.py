@@ -14,6 +14,7 @@ def load(name):
 
 settings = load("settings_protection")
 info = load("management_info")
+commands = load("commands")
 
 
 class SettingsDecodeTest(unittest.TestCase):
@@ -73,3 +74,27 @@ class SettingsDecodeTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CommandBuilderTest(unittest.TestCase):
+    def test_known_zero_address(self):
+        self.assertEqual(
+            commands.build_v2_commands("0x00"),
+            ["~20004642E00200FD37\r", "~20004644E00200FD35\r",
+             "~20004647E00200FD32\r", "~20004651E00200FD37\r"],
+        )
+
+    def test_address_one_uses_address_in_info(self):
+        cmds = commands.build_v2_commands("0x01")
+        self.assertTrue(cmds[0].startswith("~20004642E00201"))
+        self.assertEqual(len(cmds[0]), 20)
+
+    def test_all_addresses_build(self):
+        for addr in range(0x10):
+            cmds = commands.build_v2_commands(f"0x{addr:02X}")
+            self.assertEqual(len(cmds), 4)
+            self.assertIn(f"E002{addr:02X}", cmds[0])
+
+    def test_invalid_address(self):
+        with self.assertRaises(ValueError):
+            commands.build_v2_commands("0x10")

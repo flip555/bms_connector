@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import logging
+import socket
+
+import serial
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 import homeassistant.helpers.config_validation as cv
@@ -92,11 +96,37 @@ async def async_setup(hass, config):
     return True
 
 
+def _probe_transport(data) -> None:
+    """Fail fast with ConfigEntryNotReady when the transport is unavailable."""
+    connection_type = data.get("connection_type", "usb_serial")
+    if connection_type == "telnet":
+        host = data.get("host")
+        port = data.get("port", 23)
+        try:
+            with socket.create_connection((host, port), timeout=5):
+                pass
+        except OSError as err:
+            raise ConfigEntryNotReady(
+                f"Telnet bridge {host}:{port} unavailable: {err}"
+            ) from err
+    else:
+        port = data.get("connector_port")
+        try:
+            with serial.Serial(port, 19200, timeout=1):
+                pass
+        except (OSError, serial.SerialException) as err:
+            raise ConfigEntryNotReady(
+                f"Serial port {port} unavailable: {err}"
+            ) from err
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
 
     await initialize_bms_component(hass, entry)
+
+    await hass.async_add_executor_job(_probe_transport, entry.data)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
@@ -111,5 +141,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    await async_unload_entry(hass, entry)
-    await async_setup_entry(hass, entry)
+    # Reload through Home Assistant so async_forward_entry_setups runs inside
+    # the normal setup context (manual re-entry triggers HA's frame warning).
+    await hass.config_entries.async_reload(entry.entry_id)
