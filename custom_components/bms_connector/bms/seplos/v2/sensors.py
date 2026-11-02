@@ -44,6 +44,61 @@ from .calc_functions import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Vendor XML uses display labels that are not valid HA units.
+_UNIT_ALIASES = {
+    "Minutes": "min",
+    "S": "s",
+    "mS": "ms",
+    "When": None,
+    "String": None,
+    "times": None,
+}
+
+# Settings values are in volts even where the legacy definition said mV.
+_SETTINGS_UNIT_FIXES = {
+    "monomer_high_voltage_alarm": "V",
+    "monomer_high_pressure_recovery": "V",
+    "monomer_low_pressure_alarm": "V",
+    "monomer_low_pressure_recovery": "V",
+    "monomer_overvoltage_protection": "V",
+    "monomer_overvoltage_recovery": "V",
+    "monomer_undervoltage_protection": "V",
+    "monomer_undervoltage_recovery": "V",
+    "equalization_opening_voltage": "V",
+    "battery_low_voltage_forbidden_charging": "V",
+    "total_voltage_overvoltage_protection": "V",
+    "output_soft_start_delay": "ms",
+    "charge_overcurrent_delay": "s",
+    "discharge_overcurrent_delay": "s",
+    "transient_overcurrent_delay": "ms",
+    "overcurrent_delay_recovery": "s",
+    "charge_current_limit_delay": "min",
+    "charge_activation_delay": "min",
+    "work_record_interval": "min",
+    "standby_recording_interval": "min",
+    "static_equilibrium_time": None,
+    "charging_activation_interval": None,
+    "standby_shutdown_delay": None,
+    "battery_number_in_series": None,
+    "charge_activation_times": None,
+    "overcurrent_recovery_times": None,
+    "compensation_point_1_position": None,
+    "compensation_point_2_position": None,
+    "cell_invalidation_differential_pressure": None,
+    "cell_invalidation_recovery": None,
+    "equalization_opening_pressure_difference": None,
+    "equalization_closing_pressure_difference": None,
+}
+
+_SETTINGS_ICON_FIXES = {
+    "battery_number_in_series": "mdi:counter",
+    "charge_activation_times": "mdi:counter",
+    "overcurrent_recovery_times": "mdi:counter",
+    "compensation_point_1_position": "mdi:tune-variant",
+    "compensation_point_2_position": "mdi:tune-variant",
+}
+
+
 # Define the generate_sensors function
 async def generate_sensors(hass, bms_type, connector_info, config_battery_address, sensor_prefix, entry_id, async_add_entities, poll_interval=10):
     class DerivedSeplosBMSSensor(SeplosBMSSensorBase):
@@ -138,7 +193,6 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         SeplosBMSSensorBase(coordinator, connector_info, "soc_ah", "SOC", "Ah", "mdi:gauge", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "monomer_high_voltage_alarm", "Monomer High Voltage Alarm", "mV", "mdi:flash-circle", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "overcurrent_delay_recovery", "Overcurrent Delay Recovery", "s", "mdi:timer-sand", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
-        SeplosBMSSensorBase(coordinator, connector_info, "total_voltage_overvoltage_protection", "Total Voltage Overvoltage Protection", "mV", "mdi:flash-circle", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "equalization_opening_voltage", "Equalization Opening Voltage", "mV", "mdi:flash-circle", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "monomer_undervoltage_recovery", "Monomer Undervoltage Recovery", "mV", "mdi:flash-circle", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
         SeplosBMSSensorBase(coordinator, connector_info, "monomer_low_pressure_recovery", "Monomer Low Pressure Recovery", "mV", "mdi:flash-circle", battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id, is_settings=True),
@@ -283,6 +337,10 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         self._sensor_prefix = sensor_prefix
         self._entry_id = entry_id
         self._is_settings = is_settings
+        if is_settings:
+            self._unit = _SETTINGS_UNIT_FIXES.get(attribute, self._unit)
+            self._icon = _SETTINGS_ICON_FIXES.get(attribute, self._icon)
+        self._unit = _UNIT_ALIASES.get(self._unit, self._unit)
         self._set_sensor_attributes(attribute)
 
         # Set device info — split BMS and Settings into separate devices like HEH
@@ -309,6 +367,10 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         # For derived sensors, attribute is None - check the display name instead
         check = attribute.lower() if attribute else self._name.lower()
 
+        if str(self._unit).lower() in ("s", "ms", "min", "h"):
+            self._attr_device_class = SensorDeviceClass.DURATION
+            self._attr_state_class = None
+            return
         if 'temperature' in check:
             self._attr_device_class = SensorDeviceClass.TEMPERATURE
             self._attr_state_class = SensorStateClass.MEASUREMENT
