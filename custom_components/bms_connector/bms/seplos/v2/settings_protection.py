@@ -185,389 +185,132 @@ class ProtectionSettingsData:
 
 
 
+# Settings field table for the 0x47 block.
+# (attribute, offset, width, signed, addend, scale)
+#
+# The first 60 fields are 2-byte big-endian words (offsets 0-119). From
+# offset 120 the protocol switches to single-byte fields; byte 123 is
+# padding. Reading 2 bytes past 120 shifts every subsequent field and
+# eventually lands in the ASCII model string.
+FIELD_SPEC = (
+    ("monomer_high_voltage_alarm", 0, 2, False, 0, 0.001),
+    ("monomer_high_pressure_recovery", 2, 2, False, 0, 0.001),
+    ("monomer_low_pressure_alarm", 4, 2, False, 0, 0.001),
+    ("monomer_low_pressure_recovery", 6, 2, False, 0, 0.001),
+    ("monomer_overvoltage_protection", 8, 2, False, 0, 0.001),
+    ("monomer_overvoltage_recovery", 10, 2, False, 0, 0.001),
+    ("monomer_undervoltage_protection", 12, 2, False, 0, 0.001),
+    ("monomer_undervoltage_recovery", 14, 2, False, 0, 0.001),
+    ("equalization_opening_voltage", 16, 2, False, 0, 0.001),
+    ("battery_low_voltage_forbidden_charging", 18, 2, False, 0, 0.001),
+    ("total_pressure_high_pressure_alarm", 20, 2, False, 0, 0.01),
+    ("total_pressure_high_pressure_recovery", 22, 2, False, 0, 0.01),
+    ("total_pressure_low_pressure_alarm", 24, 2, False, 0, 0.01),
+    ("total_pressure_low_pressure_recovery", 26, 2, False, 0, 0.01),
+    ("total_voltage_overvoltage_protection", 28, 2, False, 0, 0.01),
+    ("total_pressure_overpressure_recovery", 30, 2, False, 0, 0.01),
+    ("total_voltage_undervoltage_protection", 32, 2, False, 0, 0.01),
+    ("total_pressure_undervoltage_recovery", 34, 2, False, 0, 0.01),
+    ("charging_overvoltage_protection", 36, 2, False, 0, 0.01),
+    ("charging_overvoltage_recovery", 38, 2, False, 0, 0.01),
+    ("charging_high_temperature_warning", 40, 2, False, -2731, 0.1),
+    ("charging_high_temperature_recovery", 42, 2, False, -2731, 0.1),
+    ("charging_low_temperature_warning", 44, 2, False, -2731, 0.1),
+    ("charging_low_temperature_recovery", 46, 2, False, -2731, 0.1),
+    ("charging_over_temperature_protection", 48, 2, False, -2731, 0.1),
+    ("charging_over_temperature_recovery", 50, 2, False, -2731, 0.1),
+    ("charging_under_temperature_protection", 52, 2, False, -2731, 0.1),
+    ("charging_under_temperature_recovery", 54, 2, False, -2731, 0.1),
+    ("discharge_high_temperature_warning", 56, 2, False, -2731, 0.1),
+    ("discharge_high_temperature_recovery", 58, 2, False, -2731, 0.1),
+    ("discharge_low_temperature_warning", 60, 2, False, -2731, 0.1),
+    ("discharge_low_temperature_recovery", 62, 2, False, -2731, 0.1),
+    ("discharge_over_temperature_protection", 64, 2, False, -2731, 0.1),
+    ("discharge_over_temperature_recovery", 66, 2, False, -2731, 0.1),
+    ("discharge_under_temperature_protection", 68, 2, False, -2731, 0.1),
+    ("discharge_under_temperature_recovery", 70, 2, False, -2731, 0.1),
+    ("cell_low_temperature_heating", 72, 2, False, -2731, 0.1),
+    ("cell_heating_recovery", 74, 2, False, -2731, 0.1),
+    ("ambient_high_temperature_alarm", 76, 2, False, -2731, 0.1),
+    ("ambient_high_temperature_recovery", 78, 2, False, -2731, 0.1),
+    ("ambient_low_temperature_alarm", 80, 2, False, -2731, 0.1),
+    ("ambient_low_temperature_recovery", 82, 2, False, -2731, 0.1),
+    ("environmental_over_temperature_protection", 84, 2, False, -2731, 0.1),
+    ("environmental_overtemperature_recovery", 86, 2, False, -2731, 0.1),
+    ("environmental_under_temperature_protection", 88, 2, False, -2731, 0.1),
+    ("environmental_undertemperature_recovery", 90, 2, False, -2731, 0.1),
+    ("power_high_temperature_alarm", 92, 2, False, -2731, 0.1),
+    ("power_high_temperature_recovery", 94, 2, False, -2731, 0.1),
+    ("power_over_temperature_protection", 96, 2, False, -2731, 0.1),
+    ("power_over_temperature_recovery", 98, 2, False, -2731, 0.1),
+    ("charging_overcurrent_warning", 100, 2, False, 0, 0.01),
+    ("charging_overcurrent_recovery", 102, 2, False, 0, 0.01),
+    ("discharge_overcurrent_warning", 104, 2, True, 0, 0.01),
+    ("discharge_overcurrent_recovery", 106, 2, True, 0, 0.01),
+    ("charge_overcurrent_protection", 108, 2, False, 0, 0.01),
+    ("discharge_overcurrent_protection", 110, 2, True, 0, 0.01),
+    ("transient_overcurrent_protection", 112, 2, True, 0, 0.01),
+    ("output_soft_start_delay", 114, 2, False, 0, 1),
+    ("battery_rated_capacity", 116, 2, False, 0, 0.01),
+    ("soc_ah", 118, 2, False, 0, 0.01),
+    ("cell_invalidation_differential_pressure", 121, 1, False, 0, 1),
+    ("cell_invalidation_recovery", 120, 1, False, 0, 1),
+    ("equalization_opening_pressure_difference", 122, 1, False, 0, 1),
+    ("equalization_closing_pressure_difference", 124, 1, False, 0, 1),
+    ("static_equilibrium_time", 125, 1, False, 0, 1),
+    ("battery_number_in_series", 126, 1, False, 0, 1),
+    ("charge_overcurrent_delay", 127, 1, False, 0, 1),
+    ("discharge_overcurrent_delay", 128, 1, False, 0, 1),
+    ("transient_overcurrent_delay", 129, 1, False, 0, 1),
+    ("overcurrent_delay_recovery", 130, 1, False, 0, 1),
+    ("overcurrent_recovery_times", 131, 1, False, 0, 1),
+    ("charge_current_limit_delay", 132, 1, False, 0, 1),
+    ("charge_activation_delay", 133, 1, False, 0, 1),
+    ("charging_activation_interval", 134, 1, False, 0, 1),
+    ("charge_activation_times", 135, 1, False, 0, 1),
+    ("work_record_interval", 136, 1, False, 0, 1),
+    ("standby_recording_interval", 137, 1, False, 0, 1),
+    ("standby_shutdown_delay", 138, 1, False, 0, 1),
+    ("remaining_capacity_alarm", 139, 1, False, 0, 1),
+    ("remaining_capacity_protection", 140, 1, False, 0, 1),
+    ("interval_charge_capacity", 141, 1, False, 0, 1),
+    ("cycle_cumulative_capacity", 142, 1, False, 0, 1),
+    ("connection_fault_impedance", 143, 1, False, 0, 0.1),
+    ("compensation_point_1_position", 144, 1, False, 0, 1),
+    ("compensation_point_1_impedance", 145, 1, False, 0, 0.1),
+    ("compensation_point_2_position", 146, 1, False, 0, 1),
+    ("compensation_point_2_impedance", 147, 1, False, 0, 0.1),
+)
+
+
 def decode_fourseven(hex_string):
+    """Decode the 0x47 settings payload into ProtectionSettingsData."""
     result = ProtectionSettingsData()
-    hex_string = bytes.fromhex(hex_string)
-    if len(hex_string) < 10:
-        return None, None, None
 
-    _soi = hex_string[0]
-    _ver = hex_string[1]
-    _adr = hex_string[2]
-    _infoflag = hex_string[3]
-
-    # Extract length correctly
-    length = int.from_bytes(hex_string[4:6], byteorder='big')
-
-    # Extract datai correctly as bytes
-    datai_start = 2
-    datai_end = datai_start + length
-    datai_bytes = hex_string[datai_start:datai_end]
-
-    _chksum = hex_string[-4:-2]
-    _eoi = hex_string[-2]
-
-
-    # Convert DATAI to human-readable format
-    datai_values = [
-        int.from_bytes(datai_bytes[i:i+2], byteorder='big')
-        for i in range(0, len(datai_bytes), 2)
-    ]
-
-    datai_values = [
-        # Monomer high voltage alarm: 3.550 V
-        int.from_bytes(datai_bytes[0:2], byteorder='big') / 1000.0,
-
-        # Monomer high pressure recovery: 3.400 V
-        int.from_bytes(datai_bytes[2:4], byteorder='big') / 1000.0,
-
-        # Monomer low pressure alarm: 2.900 V
-        int.from_bytes(datai_bytes[4:6], byteorder='big') / 1000.0,
-
-        # Monomer low pressure recovery: 3.000 V
-        int.from_bytes(datai_bytes[6:8], byteorder='big') / 1000.0,
-
-        # Monomer overvoltage protection: 3.650 V
-        int.from_bytes(datai_bytes[8:10], byteorder='big') / 1000.0,
-
-        # Monomer overvoltage recovery: 3.400 V
-        int.from_bytes(datai_bytes[10:12], byteorder='big') / 1000.0,
-
-        # Monomer undervoltage protection: 2.700 V
-        int.from_bytes(datai_bytes[12:14], byteorder='big') / 1000.0,
-
-        # Monomer undervoltage recovery: 2.900 V
-        int.from_bytes(datai_bytes[14:16], byteorder='big') / 1000.0,
-
-        # Equalization opening voltage: 3.400 V
-        int.from_bytes(datai_bytes[16:18], byteorder='big') / 1000.0,
-
-        # Battery low voltage forbidden charging: 1.500 V
-        int.from_bytes(datai_bytes[18:20], byteorder='big') / 1000.0,
-
-        # Total pressure high pressure alarm: 58.00 V
-        int.from_bytes(datai_bytes[20:22], byteorder='big') / 100.0,
-
-        # Total pressure and high pressure recovery: 54.40 V
-        int.from_bytes(datai_bytes[22:24], byteorder='big') / 100.0,
-
-        # Total pressure low pressure alarm: 46.40 V
-        int.from_bytes(datai_bytes[24:26], byteorder='big') / 100.0,
-
-        # Total pressure and low pressure recovery: 48.00 V
-        int.from_bytes(datai_bytes[26:28], byteorder='big') / 100.0,
-
-        # Total_voltage overvoltage protection: 56.80 V
-        int.from_bytes(datai_bytes[28:30], byteorder='big') / 100.0,
-
-        # Total pressure overpressure recovery: 54.40 V
-        int.from_bytes(datai_bytes[30:32], byteorder='big') / 100.0,
-
-        # Total_voltage undervoltage protection: 41.60 V
-        int.from_bytes(datai_bytes[32:34], byteorder='big') / 100.0,
-
-        # Total pressure undervoltage recovery: 46.00 V
-        int.from_bytes(datai_bytes[34:36], byteorder='big') / 100.0,
-
-        # Charging overvoltage protection: 56.80 V
-        int.from_bytes(datai_bytes[36:38], byteorder='big') / 100.0,
-
-        # Charging overvoltage recovery: 56.80 V
-        int.from_bytes(datai_bytes[38:40], byteorder='big') / 100.0,
-
-        # Charging high temperature warning: 50.0 ℃
-        (int.from_bytes(datai_bytes[40:42], byteorder='big')  - 2731) / 10.0,
-
-        # Charging high temperature recovery: 47.0 ℃
-        (int.from_bytes(datai_bytes[42:44], byteorder='big')  - 2731) / 10.0,
-
-        # Charging low temperature warning: 2.0 ℃
-        (int.from_bytes(datai_bytes[44:46], byteorder='big')  - 2731) / 10.0,
-
-        # Charging low temperature recovery: 5.0 ℃
-        (int.from_bytes(datai_bytes[46:48], byteorder='big')  - 2731) / 10.0,
-
-        # Charging over temperature protection: 55.0 ℃
-        (int.from_bytes(datai_bytes[48:50], byteorder='big')  - 2731) / 10.0,
-
-        # Charging over temperature recovery: 50.0 ℃
-        (int.from_bytes(datai_bytes[50:52], byteorder='big')  - 2731) / 10.0,
-
-        # Charging under-temperature protection: -10.0 ℃
-        (int.from_bytes(datai_bytes[52:54], byteorder='big')  - 2731) / 10.0,
-
-        # Charging under temperature recovery: 0.0 ℃
-        (int.from_bytes(datai_bytes[54:56], byteorder='big')  - 2731) / 10.0,
-
-        # Discharge high temperature warning: 52.0 ℃
-        (int.from_bytes(datai_bytes[56:58], byteorder='big')  - 2731) / 10.0,
-
-        # Discharge high temperature recovery: 47.0 ℃
-        (int.from_bytes(datai_bytes[58:60], byteorder='big')  - 2731) / 10.0,
-
-        # Discharge low temperature warning: -10.0 ℃
-        (int.from_bytes(datai_bytes[60:62], byteorder='big')  - 2731) / 10.0,
-
-        # Discharge low temperature recovery: 3.0 ℃
-        (int.from_bytes(datai_bytes[62:64], byteorder='big')  - 2731) / 10.0,
-
-        # Discharge over temperature protection: 60.0 ℃
-        (int.from_bytes(datai_bytes[64:66], byteorder='big')  - 2731) / 10.0,
-
-        # Discharge over temperature recovery: 55.0 ℃
-        (int.from_bytes(datai_bytes[66:68], byteorder='big')  - 2731) / 10.0,
-
-        # Discharge under temperature protection: -20.0 ℃
-        (int.from_bytes(datai_bytes[68:70], byteorder='big')  - 2731) / 10.0,
-
-        # Discharge under temperature recovery: -10.0 ℃
-        (int.from_bytes(datai_bytes[70:72], byteorder='big')  - 2731) / 10.0,
-
-        # Cell low temperature heating
-        (int.from_bytes(datai_bytes[72:74], byteorder='big')  - 2731) / 10.0,
-
-        # Cell heating recovery
-        (int.from_bytes(datai_bytes[74:76], byteorder='big')  - 2731) / 10.0,
-
-        # Ambient high temperature alarm
-        (int.from_bytes(datai_bytes[76:78], byteorder='big')  - 2731) / 10.0,
-
-        # Ambient high temperature recovery
-        (int.from_bytes(datai_bytes[78:80], byteorder='big')  - 2731) / 10.0,
-
-        # Ambient low temperature alarm
-        (int.from_bytes(datai_bytes[80:82], byteorder='big')  - 2731) / 10.0,
-
-        # Ambient low temperature recovery
-        (int.from_bytes(datai_bytes[82:84], byteorder='big')  - 2731) / 10.0,
-
-        # Environmental over-temperature protection
-        (int.from_bytes(datai_bytes[84:86], byteorder='big')  - 2731) / 10.0,
-
-        # Environmental overtemperature recovery
-        (int.from_bytes(datai_bytes[86:88], byteorder='big')  - 2731) / 10.0,
-
-        # Environmental under-temperature protection
-        (int.from_bytes(datai_bytes[88:90], byteorder='big')  - 2731) / 10.0,
-
-        # Environmental undertemperature recovery
-        (int.from_bytes(datai_bytes[90:92], byteorder='big')  - 2731) / 10.0,
-
-        # Power high temperature alarm
-        (int.from_bytes(datai_bytes[92:94], byteorder='big')  - 2731) / 10.0,
-
-        # Power high temperature recovery
-        (int.from_bytes(datai_bytes[94:96], byteorder='big')  - 2731) / 10.0,
-
-        # Power over temperature protection
-        (int.from_bytes(datai_bytes[96:98], byteorder='big')  - 2731) / 10.0,
-
-        # Power over temperature recovery
-        (int.from_bytes(datai_bytes[98:100], byteorder='big')  - 2731) / 10.0,
-
-        # Charging overcurrent warning
-        int.from_bytes(datai_bytes[100:102], byteorder='big') / 10.0,
-
-        # Charging overcurrent recovery
-        int.from_bytes(datai_bytes[102:104], byteorder='big') / 10.0,
-
-        # Discharge overcurrent warning
-        int.from_bytes(datai_bytes[104:106], byteorder='big') / 10.0,
-
-        # Discharge overcurrent recovery
-        int.from_bytes(datai_bytes[106:108], byteorder='big') / 10.0,
-
-        # Charge overcurrent protection
-        int.from_bytes(datai_bytes[108:110], byteorder='big') / 10.0,
-
-        # Discharge overcurrent protection
-        int.from_bytes(datai_bytes[110:112], byteorder='big') / 10.0,
-
-        # Transient overcurrent protection
-        int.from_bytes(datai_bytes[112:114], byteorder='big') / 10.0,
-
-
-        # Output soft start delay
-        int.from_bytes(datai_bytes[114:116], byteorder='big') / 1000.0,
-
-        # Battery rated capacity
-        int.from_bytes(datai_bytes[116:118], byteorder='big') / 100.0,
-
-        # SOC
-        int.from_bytes(datai_bytes[118:120], byteorder='big') / 100.0,
-
-        # Cell invalidation differential pressure
-        int.from_bytes(datai_bytes[120:122], byteorder='big') / 1000.0,
-
-        # Cell invalidation recovery
-        int.from_bytes(datai_bytes[122:124], byteorder='big') / 1000.0,
-
-        # Equalization opening pressure difference
-        int.from_bytes(datai_bytes[124:126], byteorder='big') / 1000.0,
-
-        # Equalization closing pressure difference
-        int.from_bytes(datai_bytes[126:128], byteorder='big') / 1000.0,
-
-        # Static equilibrium time
-        int.from_bytes(datai_bytes[128:130], byteorder='big'),
-
-        # Battery number in series
-        int.from_bytes(datai_bytes[130:132], byteorder='big'),
-
-        # Charge overcurrent delay
-        int.from_bytes(datai_bytes[132:134], byteorder='big'),
-
-        # Discharge overcurrent delay
-        int.from_bytes(datai_bytes[134:136], byteorder='big'),
-
-        # Transient overcurrent delay
-        int.from_bytes(datai_bytes[136:138], byteorder='big'),
-
-        # Overcurrent delay recovery
-        int.from_bytes(datai_bytes[138:140], byteorder='big'),
-
-        # Overcurrent recovery times
-        int.from_bytes(datai_bytes[140:142], byteorder='big'),
-
-        # Charge current limit delay
-        int.from_bytes(datai_bytes[142:144], byteorder='big'),
-
-        # Charge activation delay
-        int.from_bytes(datai_bytes[144:146], byteorder='big'),
-
-        # Charging activation interval
-        int.from_bytes(datai_bytes[146:148], byteorder='big'),
-
-        # Charge activation times
-        int.from_bytes(datai_bytes[148:150], byteorder='big'),
-
-        # Work record interval
-        int.from_bytes(datai_bytes[150:152], byteorder='big'),
-
-        # Standby recording interval
-        int.from_bytes(datai_bytes[152:154], byteorder='big'),
-
-        # Standby shutdown delay
-        int.from_bytes(datai_bytes[154:156], byteorder='big'),
-
-        # Remaining capacity alarm
-        int.from_bytes(datai_bytes[156:158], byteorder='big') / 100.0,
-
-        # Remaining capacity protection
-        int.from_bytes(datai_bytes[158:160], byteorder='big') / 100.0,
-
-        # Interval charge capacity
-        int.from_bytes(datai_bytes[160:162], byteorder='big') / 100.0,
-
-        # Cycle cumulative capacity
-        int.from_bytes(datai_bytes[162:164], byteorder='big') / 100.0,
-
-        # Connection fault impedance
-        int.from_bytes(datai_bytes[164:166], byteorder='big'),
-
-        # Compensation point 1 position
-        int.from_bytes(datai_bytes[166:168], byteorder='big'),
-
-        # Compensation point 1 impedance
-        int.from_bytes(datai_bytes[168:170], byteorder='big'),
-
-        # Compensation point 2 position
-        int.from_bytes(datai_bytes[170:172], byteorder='big'),
-
-        # Compensation point 2 impedance
-        int.from_bytes(datai_bytes[172:174], byteorder='big')
-
-    ]
-
-    # Assign the calculated values to the result object
-    result.monomer_high_voltage_alarm = datai_values[0]
-    result.monomer_high_pressure_recovery = datai_values[1]
-    result.monomer_low_pressure_alarm = datai_values[2]
-    result.monomer_low_pressure_recovery = datai_values[3]
-    result.monomer_overvoltage_protection = datai_values[4]
-    result.monomer_overvoltage_recovery = datai_values[5]
-    result.monomer_undervoltage_protection = datai_values[6]
-    result.monomer_undervoltage_recovery = datai_values[7]
-    result.equalization_opening_voltage = datai_values[8]
-    result.battery_low_voltage_forbidden_charging = datai_values[9]
-    result.total_pressure_high_pressure_alarm = datai_values[10]
-    result.total_pressure_high_pressure_recovery = datai_values[11]
-    result.total_pressure_low_pressure_alarm = datai_values[12]
-    result.total_pressure_low_pressure_recovery = datai_values[13]
-    result.total_voltage_overvoltage_protection = datai_values[14]
-    result.total_pressure_overpressure_recovery = datai_values[15]
-    result.total_voltage_undervoltage_protection = datai_values[16]
-    result.total_pressure_undervoltage_recovery = datai_values[17]
-    result.charging_overvoltage_protection = datai_values[18]
-    result.charging_overvoltage_recovery = datai_values[19]
-    result.charging_high_temperature_warning = datai_values[20]
-    result.charging_high_temperature_recovery = datai_values[21]
-    result.charging_low_temperature_warning = datai_values[22]
-    result.charging_low_temperature_recovery = datai_values[23]
-    result.charging_over_temperature_protection = datai_values[24]
-    result.charging_over_temperature_recovery = datai_values[25]
-    result.charging_under_temperature_protection = datai_values[26]
-    result.charging_under_temperature_recovery = datai_values[27]
-    result.discharge_high_temperature_warning = datai_values[28]
-    result.discharge_high_temperature_recovery = datai_values[29]
-    result.discharge_low_temperature_warning = datai_values[30]
-    result.discharge_low_temperature_recovery = datai_values[31]
-    result.discharge_over_temperature_protection = datai_values[32]
-    result.discharge_over_temperature_recovery = datai_values[33]
-    result.discharge_under_temperature_protection = datai_values[34]
-    result.discharge_under_temperature_recovery = datai_values[35]
-    result.cell_low_temperature_heating = datai_values[36]
-    result.cell_heating_recovery = datai_values[37]
-    result.ambient_high_temperature_alarm = datai_values[38]
-    result.ambient_high_temperature_recovery = datai_values[39]
-    result.ambient_low_temperature_alarm = datai_values[40]
-    result.ambient_low_temperature_recovery = datai_values[41]
-    result.environmental_over_temperature_protection = datai_values[42]
-    result.environmental_overtemperature_recovery = datai_values[43]
-    result.environmental_under_temperature_protection = datai_values[44]
-    result.environmental_undertemperature_recovery = datai_values[45]
-    result.power_high_temperature_alarm = datai_values[46]
-    result.power_high_temperature_recovery = datai_values[47]
-    result.power_over_temperature_protection = datai_values[48]
-    result.power_over_temperature_recovery = datai_values[49]
-    result.charging_overcurrent_warning = datai_values[50]
-    result.charging_overcurrent_recovery = datai_values[51]
-    result.discharge_overcurrent_warning = datai_values[52]
-    result.discharge_overcurrent_recovery = datai_values[53]
-    result.charge_overcurrent_protection = datai_values[54]
-    result.discharge_overcurrent_protection = datai_values[55]
-    result.transient_overcurrent_protection = datai_values[56]
-    result.output_soft_start_delay = datai_values[57]
-    result.battery_rated_capacity = datai_values[58]
-    result.soc_ah = datai_values[59]
-    result.cell_invalidation_differential_pressure = datai_values[60]
-    result.cell_invalidation_recovery = datai_values[61]
-    result.equalization_opening_pressure_difference = datai_values[62]
-    result.equalization_closing_pressure_difference = datai_values[63]
-    result.static_equilibrium_time = datai_values[64]
-    result.battery_number_in_series = datai_values[65]
-    result.charge_overcurrent_delay = datai_values[66]
-    result.discharge_overcurrent_delay = datai_values[67]
-    result.transient_overcurrent_delay = datai_values[68]
-    result.overcurrent_delay_recovery = datai_values[69]
-    result.overcurrent_recovery_times = datai_values[70]
-    result.charge_current_limit_delay = datai_values[71]
-    result.charge_activation_delay = datai_values[72]
-    result.charging_activation_interval = datai_values[73]
-    result.charge_activation_times = datai_values[74]
-    result.work_record_interval = datai_values[75]
-    result.standby_recording_interval = datai_values[76]
-    result.standby_shutdown_delay = datai_values[77]
-    result.remaining_capacity_alarm = datai_values[78]
-    result.remaining_capacity_protection = datai_values[79]
-    result.interval_charge_capacity = datai_values[80]
-    result.cycle_cumulative_capacity = datai_values[81]
-    result.connection_fault_impedance = datai_values[82]
-    result.compensation_point_1_position = datai_values[83]
-    result.compensation_point_1_impedance = datai_values[84]
-    result.compensation_point_2_position = datai_values[85]
-    result.compensation_point_2_impedance = datai_values[86]
-
-
+    if hex_string.startswith("~"):
+        hex_string = hex_string[1:]
+
+    try:
+        raw = bytes.fromhex(hex_string)
+    except ValueError:
+        _LOGGER.error("Settings payload is not valid hex")
+        return None
+
+    if len(raw) < 8:
+        return None
+
+    # The caller passes LEN(2) + INFO; skip the length field.
+    datai = raw[2:]
+    if datai and datai[-1] == 0x0D:
+        datai = datai[:-1]
+
+    for name, offset, width, signed, addend, scale in FIELD_SPEC:
+        chunk = datai[offset:offset + width]
+        if len(chunk) != width:
+            setattr(result, name, None)
+            continue
+        value = int.from_bytes(chunk, byteorder="big", signed=signed)
+        value = (value + addend) * scale
+        setattr(result, name, round(value, 4) if scale < 1 else value)
 
     return result
