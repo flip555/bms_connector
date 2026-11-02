@@ -2,6 +2,7 @@ import logging
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.core import HomeAssistant
 from homeassistant import config_entries
+from homeassistant.exceptions import ConfigEntryNotReady
 
 #################################################
 ############## BMS Routing Imports ##############
@@ -57,4 +58,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: config_entries.Co
             _LOGGER.error("Unsupported BMS type")
 
     except Exception as e:
-        _LOGGER.error("Error setting up BMS sensors: %s", e)
+        target = (
+            config_entry.data.get("host")
+            or config_entry.data.get("connector_port")
+            or "unknown"
+        )
+        _LOGGER.error("Error setting up BMS sensors on %s: %s", target, e)
+        # Let Home Assistant retry with backoff instead of leaving the
+        # platform permanently failed.
+        raise ConfigEntryNotReady(f"{target}: {e}") from e

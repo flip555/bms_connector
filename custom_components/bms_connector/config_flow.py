@@ -76,6 +76,16 @@ class BMSConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_sensor_prefix(self, user_input=None):
         if user_input is not None:
             self.user_input.update(user_input)
+            port = self.user_input.get(CONF_HOST) or self.user_input.get("connector_port")
+            await self.async_set_unique_id(
+                "{}_{}_{}_{}".format(
+                    self.user_input.get("bms_type"),
+                    self.user_input.get("battery_address"),
+                    port,
+                    self.user_input.get("connection_type", "usb_serial"),
+                )
+            )
+            self._abort_if_unique_id_configured()
             title = "{} - {} - {} - {}".format(
                 self.user_input["bms_type"],
                 self.user_input.get(CONF_HOST, self.user_input.get("connector_port", "unknown")),

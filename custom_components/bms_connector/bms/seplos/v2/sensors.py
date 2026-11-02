@@ -1,10 +1,11 @@
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers.entity import DeviceInfo
 
 from .data_parser import extract_data_from_message
 from ....connector import get_serial_send_function
+import asyncio
 import logging
 from datetime import timedelta
 from .const import (
@@ -131,13 +132,31 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         commands = V2_COMMAND_ARRAY[config_battery_address]
 
         send_func = get_serial_send_function(connector_info)
-        telemetry_data_str = await hass.async_add_executor_job(send_func, commands)
-        battery_address, telemetry, alarms, system_details, protection_settings = extract_data_from_message(telemetry_data_str, True, True, True)
-        if battery_address != config_battery_address:
-            _LOGGER.debug("Battery Pack: %s was not found. %s found instead. Skipping", config_battery_address, battery_address)
-            pass
-        else:
-            return battery_address, telemetry, alarms, system_details, protection_settings
+
+        def _valid(result):
+            return (
+                isinstance(result, tuple)
+                and len(result) == 5
+                and result[0] == config_battery_address
+            )
+
+        async def _read_once():
+            data = await hass.async_add_executor_job(send_func, commands)
+            return extract_data_from_message(data, True, True, True)
+
+        result = await _read_once()
+        if not _valid(result):
+            _LOGGER.debug(
+                "Pack %s did not answer cleanly; retrying once", config_battery_address
+            )
+            await asyncio.sleep(0.5)
+            result = await _read_once()
+
+        if not _valid(result):
+            raise UpdateFailed(
+                f"BMS pack {config_battery_address} did not return a valid response"
+            )
+        return result
 
     battery_address, telemetry, alarms, system_details, protection_settings = await async_update_data()
 
