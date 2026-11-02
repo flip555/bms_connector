@@ -84,10 +84,13 @@ _SETTINGS_UNIT_FIXES = {
     "overcurrent_recovery_times": None,
     "compensation_point_1_position": None,
     "compensation_point_2_position": None,
-    "cell_invalidation_differential_pressure": None,
-    "cell_invalidation_recovery": None,
-    "equalization_opening_pressure_difference": None,
-    "equalization_closing_pressure_difference": None,
+}
+
+_SETTINGS_DEVICE_CLASS_FIXES = {
+    "cell_invalidation_differential_pressure": SensorDeviceClass.VOLTAGE,
+    "cell_invalidation_recovery": SensorDeviceClass.VOLTAGE,
+    "equalization_opening_pressure_difference": SensorDeviceClass.VOLTAGE,
+    "equalization_closing_pressure_difference": SensorDeviceClass.VOLTAGE,
 }
 
 _SETTINGS_ICON_FIXES = {
@@ -342,6 +345,9 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
             self._icon = _SETTINGS_ICON_FIXES.get(attribute, self._icon)
         self._unit = _UNIT_ALIASES.get(self._unit, self._unit)
         self._set_sensor_attributes(attribute)
+        if is_settings and attribute in _SETTINGS_DEVICE_CLASS_FIXES:
+            self._attr_device_class = _SETTINGS_DEVICE_CLASS_FIXES[attribute]
+            self._attr_state_class = SensorStateClass.MEASUREMENT
 
         # Set device info — split BMS and Settings into separate devices like HEH
         if is_settings:

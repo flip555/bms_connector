@@ -34,8 +34,11 @@ class SettingsDecodeTest(unittest.TestCase):
             discharge_overcurrent_warning=-100.0,
             output_soft_start_delay=2000,
             battery_number_in_series=16,
-            cell_invalidation_recovery=27,
-            cell_invalidation_differential_pressure=50,
+            cell_invalidation_differential_pressure=0.5,
+            cell_invalidation_recovery=0.2,
+            equalization_opening_pressure_difference=0.02,
+            equalization_closing_pressure_difference=0.01,
+            static_equilibrium_time=15,
             standby_shutdown_delay=48,
             work_record_interval=30,
             connection_fault_impedance=1.0,
@@ -47,8 +50,11 @@ class SettingsDecodeTest(unittest.TestCase):
         self.assertAlmostEqual(r.discharge_overcurrent_warning, -100.0, places=3)
         self.assertEqual(r.output_soft_start_delay, 2000)
         self.assertEqual(r.battery_number_in_series, 16)
-        self.assertEqual(r.cell_invalidation_recovery, 27)
-        self.assertEqual(r.cell_invalidation_differential_pressure, 50)
+        self.assertAlmostEqual(r.cell_invalidation_differential_pressure, 0.5, places=3)
+        self.assertAlmostEqual(r.cell_invalidation_recovery, 0.2, places=3)
+        self.assertAlmostEqual(r.equalization_opening_pressure_difference, 0.02, places=3)
+        self.assertAlmostEqual(r.equalization_closing_pressure_difference, 0.01, places=3)
+        self.assertEqual(r.static_equilibrium_time, 15)
         self.assertEqual(r.standby_shutdown_delay, 48)
         self.assertEqual(r.work_record_interval, 30)
         self.assertAlmostEqual(r.connection_fault_impedance, 1.0, places=3)
