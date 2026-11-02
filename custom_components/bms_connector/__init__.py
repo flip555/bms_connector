@@ -112,7 +112,7 @@ def _probe_transport(data) -> None:
     else:
         port = data.get("connector_port")
         try:
-            with serial.Serial(port, 19200, timeout=1):
+            with serial.Serial(port, data.get("baud_rate") or 19200, timeout=1):
                 pass
         except (OSError, serial.SerialException) as err:
             raise ConfigEntryNotReady(

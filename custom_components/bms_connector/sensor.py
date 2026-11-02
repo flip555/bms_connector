@@ -32,7 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: config_entries.Co
             connector_info["timeout"] = 8
         else:
             connector_info["port"] = config_entry.data.get("connector_port")
-            connector_info["baudrate"] = 19200
+            connector_info["baudrate"] = config_entry.data.get("baud_rate") or 19200
 
         poll_interval = config_entry.data.get("poll_interval", 10)
         _LOGGER.debug("Sensor Prefix: %s", sensor_prefix)
