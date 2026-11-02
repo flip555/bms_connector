@@ -24,15 +24,15 @@ Requires **Home Assistant 2025.1 or newer**.
 
 Then add it from **Settings → Devices & Services → Add Integration → BMS Connector**.
 
-## Parallel packs
-
-This integration connects over RS485. Parallel Seplos V2 stacks are unreliable over RS485 because of limitations in the Seplos firmware. If you want per-pack data from a parallel stack in Home Assistant, use an ESP32 running the BLE component:
-
-**[flip555/seplos-v2-esp32-ble](https://github.com/flip555/seplos-v2-esp32-ble)** — Seplos V2 over Bluetooth LE on an ESP32.
-
 ## Documentation
 
-Setup options, sensor definitions, protocol notes and troubleshooting live in the **[Wiki](https://github.com/flip555/bms_connector/wiki)**.
+- **[Wiki home](https://github.com/flip555/bms_connector/wiki)** — setup, configuration and troubleshooting
+- **[V2 sensor definitions](https://github.com/flip555/bms_connector/wiki/V2.0-Seplos-BMS-HA-Sensors-in-Home-Assistant:-Definitions-and-Data-Parameters)** — every field and unit
+- **[Parallel packs](https://github.com/flip555/bms_connector/wiki/Parallel-Packs)** — RS485 limits and the BLE alternative
+
+## Parallel packs
+
+RS485 is unreliable for parallel Seplos V2 stacks because of firmware limitations. Use one entry per pack where possible; for true per-pack data from a parallel stack, use the ESP32 BLE component: **[flip555/seplos-v2-esp32-ble](https://github.com/flip555/seplos-v2-esp32-ble)**. See the [wiki page](https://github.com/flip555/bms_connector/wiki/Parallel-Packs) for details.
 
 ## Support
 
