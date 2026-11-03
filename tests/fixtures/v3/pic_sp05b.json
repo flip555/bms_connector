@@ -1,0 +1,22 @@
+{
+  "source": {
+    "kind": "vendor-tool-log",
+    "tool": "DevBMSStudio 1.6.0.11",
+    "device": "BMS16S200A-SP05B",
+    "serial": "redacted",
+    "captured": "2024-06-04"
+  },
+  "protocol": "v3",
+  "transport": "usb-rs485",
+  "address": "0x00",
+  "frame_hex": "0001120000000000000000100000000000000300006a24",
+  "expected": {
+    "count": 144,
+    "on": 3,
+    "on_indices": [
+      68,
+      111,
+      112
+    ]
+  }
+}
