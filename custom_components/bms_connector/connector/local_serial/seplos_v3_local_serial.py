@@ -22,7 +22,8 @@ _LOGGER = logging.getLogger(__name__)
 # 0x04 read input registers — PIA 18 regs x 2 = 36 = 0x24
 #                             PIB 26 regs x 2 = 52 = 0x34
 _VALID_DATA_LENS_BY_FUNCTION = {
-    0x04: (0x24, 0x34),
+    0x04: (0x24, 0x34, 0x66, 0xd4, 0x14),
+    0x01: (0x12, 0x0a),
 }
 _VALID_DATA_LENS = (0x24, 0x34)
 
@@ -77,7 +78,10 @@ def _expected_data_len(command_hex: str) -> int:
     """
     try:
         raw = bytes.fromhex(command_hex)
+        function = raw[1]
         count = (raw[4] << 8) | raw[5]
+        if function == 0x01:          # read coils: one bit per coil
+            return (count + 7) // 8
         return count * 2
     except Exception:
         return 0
