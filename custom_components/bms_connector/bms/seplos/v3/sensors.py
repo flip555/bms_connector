@@ -260,6 +260,16 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
             battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
         ),
         SeplosBMSSensorBase(
+            coordinator, connector_info, "system_events",
+            "System Events", None, "mdi:list-status",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "extern_voltage",
+            "External Voltage", "V", "mdi:flash",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
             coordinator, connector_info, "max_discharge_current",
             "Max Discharge Current", "A", "mdi:current-dc",
             battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
@@ -301,6 +311,26 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         SeplosBMSSensorBase(
             coordinator, connector_info, "cell_temperature_4",
             "Cell Temperature 4", "°C", "mdi:thermometer",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "cell_temperature_5",
+            "Cell Temperature 5", "°C", "mdi:thermometer",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "cell_temperature_6",
+            "Cell Temperature 6", "°C", "mdi:thermometer",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "cell_temperature_7",
+            "Cell Temperature 7", "°C", "mdi:thermometer",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "cell_temperature_8",
+            "Cell Temperature 8", "°C", "mdi:thermometer",
             battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
         ),
         SeplosBMSSensorBase(

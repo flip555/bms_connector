@@ -205,6 +205,7 @@ class V3PIATableData:
         self.soc = 0                         # %
         self.soh = 0                         # %
         self.cycle = 0                       # cycles
+        self.system_events = 0               # bitfield
         self.avg_cell_voltage = 0            # V
         self.avg_cell_temperature = 0        # °C
         self.max_cell_voltage = 0            # V
@@ -213,6 +214,7 @@ class V3PIATableData:
         self.min_cell_temperature = 0        # °C
         self.max_discharge_current = 0       # A
         self.max_charge_current = 0          # A
+        self.extern_voltage = 0              # V
 
     def __str__(self):
         return (
@@ -257,6 +259,10 @@ class V3PIBTableData:
         self.cell_temperature_2 = 0
         self.cell_temperature_3 = 0
         self.cell_temperature_4 = 0
+        self.cell_temperature_5 = 0
+        self.cell_temperature_6 = 0
+        self.cell_temperature_7 = 0
+        self.cell_temperature_8 = 0
         # Environment temperatures (°C)
         self.environment_temperature = 0
         self.power_temperature = 0
@@ -350,10 +356,10 @@ def decode_pia_table(response: str):
         pia.min_cell_voltage         = convert_bytes_to_data("UINT16", data[22], data[23]) * 0.001
         pia.max_cell_temperature     = convert_bytes_to_data("UINT16", data[24], data[25]) * 0.1 - 273.15
         pia.min_cell_temperature     = convert_bytes_to_data("UINT16", data[26], data[27]) * 0.1 - 273.15
-        # byte[28,29] = reserved 0x100E
+        pia.system_events            = convert_bytes_to_data("UINT16", data[28], data[29])
         pia.max_discharge_current    = convert_bytes_to_data("UINT16", data[30], data[31])
         pia.max_charge_current       = convert_bytes_to_data("UINT16", data[32], data[33])
-        # byte[34,35] = reserved 0x1011
+        pia.extern_voltage           = convert_bytes_to_data("UINT16", data[34], data[35]) * 0.001
     except (IndexError, TypeError) as e:
         _LOGGER.error("decode_pia_table: index/type error: %s", e)
         return None
@@ -430,7 +436,11 @@ def decode_pib_table(response: str):
         pib.cell_temperature_3 = convert_bytes_to_data("UINT16", data[36], data[37]) * 0.1 - 273.15
         pib.cell_temperature_4 = convert_bytes_to_data("UINT16", data[38], data[39]) * 0.1 - 273.15
 
-        # Registers 0x1114–0x1117 are reserved (bytes 40–47)
+        # Cell temperatures 5–8 (registers 0x1114–0x1117)
+        pib.cell_temperature_5 = convert_bytes_to_data("UINT16", data[40], data[41]) * 0.1 - 273.15
+        pib.cell_temperature_6 = convert_bytes_to_data("UINT16", data[42], data[43]) * 0.1 - 273.15
+        pib.cell_temperature_7 = convert_bytes_to_data("UINT16", data[44], data[45]) * 0.1 - 273.15
+        pib.cell_temperature_8 = convert_bytes_to_data("UINT16", data[46], data[47]) * 0.1 - 273.15
 
         # Environment temperature (register 0x1118)
         if len(data) >= 50:
