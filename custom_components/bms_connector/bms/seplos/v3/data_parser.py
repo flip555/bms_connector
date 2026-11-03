@@ -5,6 +5,11 @@ PIB  — registers 0x1100–0x1119 (26 regs) — cell voltages + temperatures
 """
 
 import struct
+
+try:
+    from .vendor_spec import PIC_BITS, SFA_BITS, SPA_FIELDS
+except ImportError:  # standalone test loading
+    from vendor_spec import PIC_BITS, SFA_BITS, SPA_FIELDS
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,19 +50,20 @@ def verify_crc(frame_hex: str) -> bool:
 # Command construction
 # ---------------------------------------------------------------------------
 
-def build_read_command(addr: int, register: int, count: int) -> str:
+def build_read_command(addr: int, register: int, count: int, function: int = 0x04) -> str:
     """Build a Modbus RTU 0x04 (Read Input Registers) command with CRC.
 
     Args:
         addr:     Slave address (0x01–0x7F).
         register: Start register address (e.g. 0x1000 for PIA).
-        count:    Number of registers to read.
+        count:    Number of registers (or coils) to read.
+        function: Modbus function code: 0x04 registers, 0x01 coils.
 
     Returns:
         Complete command as a hex string (without spaces), CRC included.
 
     """
-    payload = bytes([addr, 0x04]) + struct.pack('>HH', register, count)
+    payload = bytes([addr, function]) + struct.pack('>HH', register, count)
     crc = modbus_crc(payload)
     cmd = (payload + crc).hex()
     _LOGGER.debug("Modbus command built: %s (addr=0x%02X, reg=0x%04X, count=%d)",
@@ -66,16 +72,18 @@ def build_read_command(addr: int, register: int, count: int) -> str:
 
 
 def build_commands_for_address(battery_addr: int) -> list:
-    """Build PIA and PIB commands for a given battery address.
-
-    PIA : register 0x1000, 18 registers  (0x12) — pack data
-    PIB : register 0x1100, 26 registers  (0x1A) — cell voltages + temps
-    """
-    cmd_pia = build_read_command(battery_addr, 0x1000, 0x12)
-    cmd_pib = build_read_command(battery_addr, 0x1100, 0x1A)
-    _LOGGER.debug("Commands for battery 0x%02X: PIA=%s | PIB=%s",
-                  battery_addr, cmd_pia, cmd_pib)
-    return [cmd_pia, cmd_pib]
+    """Build the V3 read commands for PIA, PIB, VIA, model, PIC, SFA and SPA."""
+    commands = [
+        build_read_command(battery_addr, 0x1000, 0x12),        # PIA
+        build_read_command(battery_addr, 0x1100, 0x1A),        # PIB
+        build_read_command(battery_addr, 0x1700, 0x33),        # VIA
+        build_read_command(battery_addr, 0x170A, 0x0A),        # part model
+        build_read_command(battery_addr, 0x1200, 0x90, 0x01),  # PIC alarms
+        build_read_command(battery_addr, 0x1400, 0x50, 0x01),  # SFA switches
+        build_read_command(battery_addr, 0x1300, 0x6A),        # SPA settings
+    ]
+    _LOGGER.debug("Commands for battery 0x%02X: %s", battery_addr, commands)
+    return commands
 
 
 # ---------------------------------------------------------------------------
@@ -205,6 +213,7 @@ class V3PIATableData:
         self.soc = 0                         # %
         self.soh = 0                         # %
         self.cycle = 0                       # cycles
+        self.system_events = 0               # bitfield
         self.avg_cell_voltage = 0            # V
         self.avg_cell_temperature = 0        # °C
         self.max_cell_voltage = 0            # V
@@ -213,6 +222,7 @@ class V3PIATableData:
         self.min_cell_temperature = 0        # °C
         self.max_discharge_current = 0       # A
         self.max_charge_current = 0          # A
+        self.extern_voltage = 0              # V
 
     def __str__(self):
         return (
@@ -257,6 +267,10 @@ class V3PIBTableData:
         self.cell_temperature_2 = 0
         self.cell_temperature_3 = 0
         self.cell_temperature_4 = 0
+        self.cell_temperature_5 = 0
+        self.cell_temperature_6 = 0
+        self.cell_temperature_7 = 0
+        self.cell_temperature_8 = 0
         # Environment temperatures (°C)
         self.environment_temperature = 0
         self.power_temperature = 0
@@ -280,6 +294,143 @@ class V3PIBTableData:
 # ---------------------------------------------------------------------------
 # PIA decoding
 # ---------------------------------------------------------------------------
+
+class V3VIA:
+    """Version/identification data from the VIA block."""
+
+    def __init__(self):
+        self.manufacturer = ""
+        self.model = ""
+        self.serial = ""
+
+
+class V3PIC:
+    """PIC alarm bits (144)."""
+
+    def __init__(self):
+        self.bits = []
+        self.raw = b""
+
+
+class V3SFA:
+    """SFA switch-parameter bits (80)."""
+
+    def __init__(self):
+        self.bits = []
+        self.raw = b""
+
+
+class V3SPA:
+    """SPA integer settings (106 values keyed by register address)."""
+
+    def __init__(self):
+        self.values = {}
+        self.raw = b""
+
+
+def _frame_data(response, expected_data_len):
+    """Validate and return the data bytes of a Modbus response, or None."""
+    if not response:
+        return None
+    if response.startswith("~"):
+        response = response[1:]
+    if not verify_crc(response):
+        _LOGGER.error("CRC invalid for frame %s", response)
+        return None
+    try:
+        raw = bytes.fromhex(response)
+    except ValueError:
+        return None
+    if len(raw) < 3 + expected_data_len + 2:
+        _LOGGER.warning(
+            "Frame too short: %d bytes, expected >= %d",
+            len(raw), 3 + expected_data_len + 2,
+        )
+        return None
+    return raw[3:-2]
+
+
+def decode_model_response(response):
+    """Decode the 20-byte part-model block."""
+    data = _frame_data(response, 0x14)
+    if data is None:
+        return ""
+    return data[:20].split(b"\0")[0].decode("ascii", errors="replace").strip()
+
+
+def decode_via_response(response, model_response=None):
+    """Decode VIA manufacturer/model/serial plus the separate model block."""
+    data = _frame_data(response, 0x66)
+    if data is None:
+        return None
+    model = decode_model_response(model_response) if model_response else ""
+    combined = data[:40].split(b"\0")[0].decode("ascii", errors="replace").strip()
+    serial = data[40:].split(b"\0")[0].decode("ascii", errors="replace").strip()
+    via = V3VIA()
+    via.serial = serial
+    via.model = model
+    if model and combined.endswith(model):
+        via.manufacturer = combined[: -len(model)].strip()
+    else:
+        via.manufacturer = combined
+    return via
+
+
+def _decode_bits(response, expected_data_len, spec):
+    data = _frame_data(response, expected_data_len)
+    if data is None:
+        return None
+    bits = []
+    for item in spec:
+        try:
+            bits.append((data[item["byte"]] >> item["bit"]) & 1)
+        except IndexError:
+            bits.append(0)
+    return bits, data
+
+
+def decode_pic_response(response):
+    result = _decode_bits(response, 0x12, PIC_BITS)
+    if result is None:
+        return None
+    bits, data = result
+    pic = V3PIC()
+    pic.bits = bits
+    pic.raw = data
+    return pic
+
+
+def decode_sfa_response(response):
+    result = _decode_bits(response, 0x0A, SFA_BITS)
+    if result is None:
+        return None
+    bits, data = result
+    sfa = V3SFA()
+    sfa.bits = bits
+    sfa.raw = data
+    return sfa
+
+
+def decode_spa_response(response):
+    data = _frame_data(response, 0xD4)
+    if data is None:
+        return None
+    spa = V3SPA()
+    spa.raw = data
+    for field in SPA_FIELDS:
+        off = field["index"]
+        try:
+            raw = int.from_bytes(data[off:off + 2], "big")
+        except Exception:
+            continue
+        if field["signed"] and raw >= 0x8000:
+            raw -= 0x10000
+        value = raw * field["scale"]
+        if field["unit"] == "°C":
+            value -= 273.15
+        spa.values[field["addr"]] = value
+    return spa
+
 
 def decode_pia_table(response: str):
     """Decode the Modbus response to a PIA command (registers 0x1000–0x1011).
@@ -350,10 +501,10 @@ def decode_pia_table(response: str):
         pia.min_cell_voltage         = convert_bytes_to_data("UINT16", data[22], data[23]) * 0.001
         pia.max_cell_temperature     = convert_bytes_to_data("UINT16", data[24], data[25]) * 0.1 - 273.15
         pia.min_cell_temperature     = convert_bytes_to_data("UINT16", data[26], data[27]) * 0.1 - 273.15
-        # byte[28,29] = reserved 0x100E
+        pia.system_events            = convert_bytes_to_data("UINT16", data[28], data[29])
         pia.max_discharge_current    = convert_bytes_to_data("UINT16", data[30], data[31])
         pia.max_charge_current       = convert_bytes_to_data("UINT16", data[32], data[33])
-        # byte[34,35] = reserved 0x1011
+        pia.extern_voltage           = convert_bytes_to_data("UINT16", data[34], data[35]) * 0.001
     except (IndexError, TypeError) as e:
         _LOGGER.error("decode_pia_table: index/type error: %s", e)
         return None
@@ -430,7 +581,11 @@ def decode_pib_table(response: str):
         pib.cell_temperature_3 = convert_bytes_to_data("UINT16", data[36], data[37]) * 0.1 - 273.15
         pib.cell_temperature_4 = convert_bytes_to_data("UINT16", data[38], data[39]) * 0.1 - 273.15
 
-        # Registers 0x1114–0x1117 are reserved (bytes 40–47)
+        # Cell temperatures 5–8 (registers 0x1114–0x1117)
+        pib.cell_temperature_5 = convert_bytes_to_data("UINT16", data[40], data[41]) * 0.1 - 273.15
+        pib.cell_temperature_6 = convert_bytes_to_data("UINT16", data[42], data[43]) * 0.1 - 273.15
+        pib.cell_temperature_7 = convert_bytes_to_data("UINT16", data[44], data[45]) * 0.1 - 273.15
+        pib.cell_temperature_8 = convert_bytes_to_data("UINT16", data[46], data[47]) * 0.1 - 273.15
 
         # Environment temperature (register 0x1118)
         if len(data) >= 50:
@@ -454,49 +609,34 @@ def decode_pib_table(response: str):
 
 def extract_data_from_message(msg, telemetry_requested=True, teledata_requested=True,
                                debug=True, config_battery_address=None):
-    """Parse PIA + PIB Modbus responses and return structured data.
-
-    Args:
-        msg:                     List of 2 hex strings (PIA response, PIB response).
-        telemetry_requested:     Legacy — unused.
-        teledata_requested:      Legacy — unused.
-        debug:                   Legacy — unused.
-        config_battery_address:  Battery address for display (int or str).
-
-    Returns:
-        Tuple (battery_address, pia_data, pib_data, [], []).
-
-    """
-    # Normalise address for display
+    """Decode PIA, PIB, VIA/model, PIC, SFA and SPA responses."""
     if isinstance(config_battery_address, int):
         address_string = f"0x{config_battery_address:02X}"
     else:
         address_string = str(config_battery_address) if config_battery_address else "unknown"
 
-    pia_data = None
-    pib_data = None
+    pia = pib = via = pic = sfa = spa = None
+    if not msg:
+        _LOGGER.error("extract_data_from_message: no responses")
+        return address_string, pia, pib, via, pic, sfa, spa
 
-    if not msg or len(msg) < 2:
-        _LOGGER.error("extract_data_from_message: msg must contain at least 2 frames")
-        return address_string, pia_data, pib_data, [], []
+    def get(idx):
+        if len(msg) <= idx:
+            return ""
+        value = msg[idx]
+        return value[1:] if isinstance(value, str) and value.startswith("~") else value
 
-    for idx, response in enumerate(msg):
-        if isinstance(response, str) and response.startswith("~"):
-            response = response[1:]
+    if len(msg) > 0:
+        pia = decode_pia_table(get(0))
+    if len(msg) > 1:
+        pib = decode_pib_table(get(1))
+    if len(msg) > 2:
+        via = decode_via_response(get(2), get(3))
+    if len(msg) > 4:
+        pic = decode_pic_response(get(4))
+    if len(msg) > 5:
+        sfa = decode_sfa_response(get(5))
+    if len(msg) > 6:
+        spa = decode_spa_response(get(6))
 
-        _LOGGER.debug("Frame %d received: %s", idx, response)
-
-        if idx == 0:
-            pia_data = decode_pia_table(response)
-            if pia_data is None:
-                _LOGGER.error("PIA decoding failed for battery %s", address_string)
-            else:
-                _LOGGER.debug("PIA OK: %s", pia_data)
-        elif idx == 1:
-            pib_data = decode_pib_table(response)
-            if pib_data is None:
-                _LOGGER.error("PIB decoding failed for battery %s", address_string)
-            else:
-                _LOGGER.debug("PIB OK: %s", pib_data)
-
-    return address_string, pia_data, pib_data, [], []
+    return address_string, pia, pib, via, pic, sfa, spa

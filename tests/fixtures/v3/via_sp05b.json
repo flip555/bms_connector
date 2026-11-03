@@ -1,0 +1,19 @@
+{
+  "source": {
+    "kind": "vendor-tool-log",
+    "tool": "DevBMSStudio 1.6.0.11",
+    "device": "BMS16S200A-SP05B",
+    "serial": "redacted",
+    "captured": "2024-06-04"
+  },
+  "protocol": "v3",
+  "transport": "usb-rs485",
+  "address": "0x00",
+  "via_frame_hex": "000466585a482d456c65635465636820436f2e2c4c7464424d53313653323030412d53503035420000000031335350303542323331323139303037350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005e5e",
+  "model_frame_hex": "000414424d53313653323030412d535030354200000000679a",
+  "expected": {
+    "manufacturer": "XZH-ElecTech Co.,Ltd",
+    "model": "BMS16S200A-SP05B",
+    "serial": "13SP05B2312190075"
+  }
+}

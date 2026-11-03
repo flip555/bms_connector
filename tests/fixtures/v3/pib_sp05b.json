@@ -1,0 +1,42 @@
+{
+  "source": {
+    "kind": "vendor-tool-log",
+    "tool": "DevBMSStudio 1.6.0.11",
+    "device": "BMS16S200A-SP05B",
+    "serial": "redacted",
+    "captured": "2024-06-04",
+    "supplied": "2026-11-02"
+  },
+  "protocol": "v3",
+  "transport": "usb-rs485",
+  "address": "0x00",
+  "frame_hex": "0004340ce80ce80ce80ce80ce80ce80ce80ce80ce80ce80ce80ce80ce80ce80ce80ce80ba40b9b0b9b0ba30aab0aab0aab0aab0bc20baf7d35",
+  "expected": {
+    "cell1_voltage": 3.304,
+    "cell2_voltage": 3.304,
+    "cell3_voltage": 3.304,
+    "cell4_voltage": 3.304,
+    "cell5_voltage": 3.304,
+    "cell6_voltage": 3.304,
+    "cell7_voltage": 3.304,
+    "cell8_voltage": 3.304,
+    "cell9_voltage": 3.304,
+    "cell10_voltage": 3.304,
+    "cell11_voltage": 3.304,
+    "cell12_voltage": 3.304,
+    "cell13_voltage": 3.304,
+    "cell14_voltage": 3.304,
+    "cell15_voltage": 3.304,
+    "cell16_voltage": 3.304,
+    "cell_temperature_1": 24.85,
+    "cell_temperature_2": 23.95,
+    "cell_temperature_3": 23.95,
+    "cell_temperature_4": 24.75,
+    "cell_temperature_5": -0.05,
+    "cell_temperature_6": -0.05,
+    "cell_temperature_7": -0.05,
+    "cell_temperature_8": -0.05,
+    "environment_temperature": 27.85,
+    "power_temperature": 25.95
+  }
+}

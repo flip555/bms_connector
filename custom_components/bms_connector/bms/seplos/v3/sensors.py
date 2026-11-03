@@ -12,6 +12,8 @@ from datetime import timedelta
 from .const import (
     ALARM_MAPPINGS,
 )
+from .vendor_spec import SPA_FIELDS
+from ....const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -155,7 +157,7 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
                 )
 
         # Parsing des réponses
-        battery_address, pia, pib, system_details, protection_settings = \
+        battery_address, pia, pib, via, pic, sfa, spa = \
             extract_data_from_message(
                 telemetry_data_str,
                 telemetry_requested=True,
@@ -164,13 +166,13 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
                 config_battery_address=addr_int,
             )
 
-        return battery_address, pia, pib, system_details, protection_settings
+        return battery_address, pia, pib, via, pic, sfa, spa
 
     # ------------------------------------------------------------------
     # Premier appel pour initialiser le coordinator
     # ------------------------------------------------------------------
 
-    battery_address, telemetry, alarms, system_details, protection_settings = \
+    battery_address, telemetry, alarms, via, pic, sfa, spa = \
         await async_update_data()
 
     coordinator = DataUpdateCoordinator(
@@ -181,6 +183,14 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         update_interval=timedelta(seconds=poll_interval),
     )
 
+    hass.data.setdefault(DOMAIN, {}).setdefault("coordinators", {})[entry_id] = coordinator
+    # If the binary_sensor platform set up first, hand it the coordinator now.
+    pending_binary = hass.data.get(DOMAIN, {}).get("binary_add", {}).pop(entry_id, None)
+    if pending_binary is not None:
+        from ....binary_sensor import build_entities
+        pending_binary(build_entities(
+            coordinator, entry_id, battery_address, sensor_prefix
+        ), True)
     _LOGGER.debug("async_refresh data generate_sensors called (addr=%s)", config_battery_address)
     await coordinator.async_refresh()
 
@@ -230,6 +240,21 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
             battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
         ),
         SeplosBMSSensorBase(
+            coordinator, connector_info, "manufacturer",
+            "Manufacturer", None, "mdi:factory",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "model",
+            "Model", None, "mdi:information-outline",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "serial",
+            "Serial Number", None, "mdi:identifier",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
             coordinator, connector_info, "avg_cell_voltage",
             "Avg Cell Voltage", "V", "mdi:battery-20",
             battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
@@ -257,6 +282,16 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         SeplosBMSSensorBase(
             coordinator, connector_info, "min_cell_temperature",
             "Min Cell Temperature", "°C", "mdi:thermometer-chevron-down",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "system_events",
+            "System Events", None, "mdi:list-status",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "extern_voltage",
+            "External Voltage", "V", "mdi:flash",
             battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
         ),
         SeplosBMSSensorBase(
@@ -304,6 +339,26 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
             battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
         ),
         SeplosBMSSensorBase(
+            coordinator, connector_info, "cell_temperature_5",
+            "Cell Temperature 5", "°C", "mdi:thermometer",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "cell_temperature_6",
+            "Cell Temperature 6", "°C", "mdi:thermometer",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "cell_temperature_7",
+            "Cell Temperature 7", "°C", "mdi:thermometer",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
+            coordinator, connector_info, "cell_temperature_8",
+            "Cell Temperature 8", "°C", "mdi:thermometer",
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        ),
+        SeplosBMSSensorBase(
             coordinator, connector_info, "environment_temperature",
             "Environment Temperature", "°C", "mdi:thermometer-lines",
             battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
@@ -315,7 +370,15 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
         ),
     ]
 
-    sensors = pia_sensors + pib_sensors
+    spa_sensors = [
+        SeplosV3SettingSensor(
+            coordinator, connector_info, field["addr"], field["name"], field["unit"],
+            battery_address=battery_address, sensor_prefix=sensor_prefix, entry_id=entry_id
+        )
+        for field in SPA_FIELDS
+    ]
+
+    sensors = pia_sensors + pib_sensors + spa_sensors
     async_add_entities(sensors, True)
 
 
@@ -337,7 +400,8 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         return ', '.join(triggered_alarms) if triggered_alarms else "No Alarm"
 
     def __init__(self, coordinator, port, attribute, name, unit=None,
-                 icon=None, battery_address=None, sensor_prefix=None, entry_id=None):
+                 icon=None, battery_address=None, sensor_prefix=None, entry_id=None,
+                 settings=False):
         super().__init__(coordinator)
         # Entity name already includes prefix; prevent HA 2024+ from doubling.
         self._attr_has_entity_name = False
@@ -350,13 +414,22 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         self._sensor_prefix = sensor_prefix
         self._set_sensor_attributes(attribute)
         self._entry_id = entry_id
+        self._settings = settings
 
-        # Device info for V3 BMS
+        # Device info for V3 BMS (settings get their own device)
+        if settings:
+            identifiers = {("bms_connector", f"seplos_v3_{entry_id}_settings")}
+            device_name = f"{sensor_prefix} Settings"
+            model = "V3 Settings"
+        else:
+            identifiers = {("bms_connector", f"seplos_v3_{entry_id}")}
+            device_name = f"{sensor_prefix}"
+            model = "V3 BMS"
         self._attr_device_info = DeviceInfo(
-            identifiers={("bms_connector", f"seplos_v3_{entry_id}")},
-            name=f"{sensor_prefix}",
+            identifiers=identifiers,
+            name=device_name,
             manufacturer="Seplos",
-            model="V3 BMS",
+            model=model,
             sw_version="Unknown",
         )
 
@@ -394,7 +467,8 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
 
     @property
     def unique_id(self):
-        return f"bms_connector_v3_{self._entry_id}_{self._name}"
+        prefix = "settings_" if self._settings else ""
+        return f"bms_connector_v3_{self._entry_id}_{prefix}{self._name}"
 
     @property
     def state(self):
@@ -404,11 +478,10 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
         value = _MISSING
 
         if isinstance(self.coordinator.data, tuple):
-            battery_address_data, pia_data, pib_data, system_details_data, protection_settings_data = \
+            battery_address_data, pia_data, pib_data, via_data, pic_data, sfa_data, spa_data = \
                 self.coordinator.data
-            # Cherche dans PIA, puis PIB, puis les autres objets
-            # Utilise _MISSING comme sentinel pour distinguer "absent" de "valeur 0"
-            for data_obj in (pia_data, pib_data, system_details_data, protection_settings_data):
+            # Cherche dans PIA, puis PIB, puis VIA/SPA
+            for data_obj in (pia_data, pib_data, via_data, spa_data):
                 result = self.get_value(data_obj)
                 if result is not _MISSING:
                     value = result
@@ -465,3 +538,36 @@ class SeplosBMSSensorBase(CoordinatorEntity, SensorEntity):
     @property
     def icon(self):
         return self._icon
+
+
+class SeplosV3SettingSensor(SeplosBMSSensorBase):
+    """Read-only SPA integer setting on the settings device."""
+
+    def __init__(self, coordinator, port, address, name, unit=None,
+                 battery_address=None, sensor_prefix=None, entry_id=None):
+        self._address = address
+        super().__init__(
+            coordinator, port, attribute=None, name=name, unit=unit,
+            icon="mdi:tune", battery_address=battery_address,
+            sensor_prefix=sensor_prefix, entry_id=entry_id, settings=True,
+        )
+
+    def _set_sensor_attributes(self, attribute):
+        unit = self._unit or ""
+        if unit == "V":
+            self._attr_device_class = SensorDeviceClass.VOLTAGE
+        elif unit in ("A", "mA"):
+            self._attr_device_class = SensorDeviceClass.CURRENT
+        elif unit == "°C":
+            self._attr_device_class = SensorDeviceClass.TEMPERATURE
+        elif unit in ("s", "ms", "min", "h", "µs"):
+            self._attr_device_class = SensorDeviceClass.DURATION
+        if unit:
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def state(self):
+        data = self.coordinator.data
+        if isinstance(data, tuple) and len(data) >= 7 and data[6] is not None:
+            return data[6].values.get(self._address)
+        return None

@@ -1,0 +1,23 @@
+{
+  "source": {
+    "kind": "vendor-tool-log",
+    "tool": "DevBMSStudio 1.6.0.11",
+    "device": "BMS16S200A-SP05B",
+    "serial": "redacted",
+    "captured": "2024-06-04"
+  },
+  "protocol": "v3",
+  "transport": "usb-rs485",
+  "address": "0x00",
+  "frame_hex": "0004d400040010152c15e01518168012c0122012c010e00d480dac0d480e100c1c0b540c1c0a8c07d003e801f400cb00cd00d20064012c012cff35ff33ff2e0064fea2012cfed4006a025800050bb800cd000a0dac0d4805dc03e8032000c8001e0c810c9f0c9f0cd10add0abf0aab0a470c9f0cd10cd10d030ac90a470aab0a150c810c9f0cd10d030ac90aab0aab0a470dfd0e610dfd0ef70b0f0aab0c9f0aab000a0d48000f000503c000960064004600326d606d6038540030003c00f0000a00070000000d000001f4012c168000b4ff4c0005000849e5",
+  "expected": {
+    "count": 106,
+    "samples": {
+      "1300": 4.0,
+      "1301": 16.0,
+      "1303": 56.0,
+      "1305": 57.6,
+      "133A": 59.95
+    }
+  }
+}
