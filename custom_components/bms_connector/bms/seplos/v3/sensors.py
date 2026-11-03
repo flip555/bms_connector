@@ -184,6 +184,13 @@ async def generate_sensors(hass, bms_type, connector_info, config_battery_addres
     )
 
     hass.data.setdefault(DOMAIN, {}).setdefault("coordinators", {})[entry_id] = coordinator
+    # If the binary_sensor platform set up first, hand it the coordinator now.
+    pending_binary = hass.data.get(DOMAIN, {}).get("binary_add", {}).pop(entry_id, None)
+    if pending_binary is not None:
+        from ....binary_sensor import build_entities
+        pending_binary(build_entities(
+            coordinator, entry_id, battery_address, sensor_prefix
+        ), True)
     _LOGGER.debug("async_refresh data generate_sensors called (addr=%s)", config_battery_address)
     await coordinator.async_refresh()
 

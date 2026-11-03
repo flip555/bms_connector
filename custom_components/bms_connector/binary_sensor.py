@@ -52,22 +52,32 @@ class SeplosV3BinarySensor(CoordinatorEntity, BinarySensorEntity):
         return False
 
 
+def build_entities(coordinator, entry_id, address, prefix):
+    entities = []
+    for index, item in enumerate(PIC_BITS):
+        entities.append(SeplosV3BinarySensor(
+            coordinator, "pic", index, item["name"], address, prefix, entry_id))
+    for index, item in enumerate(SFA_BITS):
+        entities.append(SeplosV3BinarySensor(
+            coordinator, "sfa", index, item["name"], address, prefix, entry_id))
+    return entities
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
                             async_add_entities: AddEntitiesCallback):
     if entry.data.get("bms_type") != "SEPLV3":
         return
+    # The sensor platform creates the coordinator. Register here first, then
+    # either consume it now (if ready) or let the sensor platform call back.
+    pending = hass.data.setdefault(DOMAIN, {}).setdefault("binary_add", {})
+    pending[entry.entry_id] = async_add_entities
+
     coordinator = hass.data.get(DOMAIN, {}).get("coordinators", {}).get(entry.entry_id)
     if coordinator is None:
-        _LOGGER.debug("No V3 coordinator for %s; skipping binary sensors", entry.entry_id)
+        _LOGGER.debug("Waiting for V3 coordinator for %s", entry.entry_id)
         return
 
+    pending.pop(entry.entry_id, None)
     address = entry.data.get("battery_address", "0x00")
     prefix = entry.data.get("sensor_prefix", "Seplos V3")
-    entities = []
-    for index, item in enumerate(PIC_BITS):
-        entities.append(SeplosV3BinarySensor(
-            coordinator, "pic", index, item["name"], address, prefix, entry.entry_id))
-    for index, item in enumerate(SFA_BITS):
-        entities.append(SeplosV3BinarySensor(
-            coordinator, "sfa", index, item["name"], address, prefix, entry.entry_id))
-    async_add_entities(entities, True)
+    async_add_entities(build_entities(coordinator, entry.entry_id, address, prefix), True)
